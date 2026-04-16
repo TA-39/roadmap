@@ -119,6 +119,45 @@ references, flag it to the user and ask whether to append.
 The document has 15 sections in a fixed order. Follow the structure exactly;
 the HTML skill parses against these headers.
 
+### Canonical Theme palette — single source of truth
+
+Every in-scope feature row in RELEASED, NOW, NEXT, and LATER must be tagged
+with exactly one theme drawn from this list. The renderer reads the theme
+directly from the MD — it does not infer. If a row is untagged, the
+renderer falls back to `Platform & UX` and emits a warning.
+
+| Theme name (use verbatim)            | Short label       | Scope                                                                                             |
+|--------------------------------------|-------------------|---------------------------------------------------------------------------------------------------|
+| Agentic / Copilot evolution          | Agentic           | Copilots, agentic orchestration, voice assistants, any "act-on-my-behalf" surface.                |
+| Teacher-in-the-loop intelligence     | Teacher-in-loop   | Calibration, disputes, HITL overrides, teacher-steerable AI behavior.                             |
+| Quality & evaluation stack           | Quality & eval    | Eval Harness, Sentinel, scoring, confidence, two-stage feedback, benchmarking infrastructure.     |
+| Arabic / Multilingual                | Arabic            | The product's ability to deliver full capability in a second language — Arabic first: i18n, RTL, HTR, Arabic NLP, Arabic summary/report generation. Strategic market bet, not plumbing. |
+| Integrations & LMS breadth           | Integrations      | Canvas, Google Classroom, Teams, LTI, third-party LMS / source integrations.                      |
+| Monetization                         | Monetization      | Paid individual tiers, Stripe, entitlement controls, billing surfaces.                            |
+| Competitive Parity                   | Parity            | Pure parity plays with no topical home (e.g., Plagiarism Detection). Not a synonym for label.     |
+| Platform & UX                        | Platform          | Design refreshes, markdown rendering, generic UX polish. Cross-cutting housekeeping.              |
+
+Rules:
+
+- **Exactly one theme per item.** Pick the strongest. If an item would fit
+  two (e.g., a parity-labeled HITL feature), pick the topical one and rely
+  on the `Competitive Parity` label + ⚔️ overlay to carry the parity signal.
+  `Competitive Parity` as a *theme* is only for items that have no topical
+  home.
+- **The label is not the theme.** An item can carry the GitHub
+  `Competitive Parity` label *and* sit under a topical theme. The theme
+  column reflects topical home; the label drives the ⚔️ overlay.
+- **Arabic / Multilingual is a strategic theme, not Platform polish.** Any
+  item whose existence is about delivering full product capability in
+  Arabic — i18n, RTL plumbing, Arabic NLP, Arabic HTR, Arabic summary
+  generation — belongs in this theme. It maps to a market bet (MENA /
+  GCC) and should be legible as an investment line, not hidden under
+  UX polish.
+- **Rendering.** The renderer reads the Theme column per row for RELEASED,
+  NOW, NEXT, and the Announcement Cross-Reference / Hidden Inventory tables.
+  For LATER, the theme comes from the `### Theme N — <name>` subsection
+  header (see Section 10 below) — the per-row Theme column is not repeated.
+
 ### Section list (in order)
 
 1. **Header block** — title, source, scope (feature count, author rule,
@@ -142,11 +181,11 @@ the HTML skill parses against these headers.
 7. **RELEASED** — the full released inventory. One row per item whose
    bucket = RELEASED (i.e., Status `Testing in Production` or `Done`).
    Header must be exactly `## RELEASED` so the HTML renderer can find it.
-   Use the same table shape as NOW/NEXT so the renderer parses it
-   uniformly:
+   Use this table shape (Theme is required — pick from the canonical
+   palette above):
 
    ```
-   | # | Title | Repo | Priority | Size | Status | Tags |
+   | # | Title | Theme | Repo | Priority | Size | Status | Tags |
    ```
 
    The Tags column carries `[ANNOUNCED]` when the item is in the
@@ -154,24 +193,45 @@ the HTML skill parses against these headers.
    page, and `[SILENT]` when neither applies (these are the hidden
    inventory — they still belong in this section, with the silent tag).
    Keep the Announcement Cross-Reference and Shipped-but-NOT-announced
-   sections too — those are analytical cuts on the same data. This
-   section is the complete, flat list.
-8. **NOW** — active build or QA. Items whose bucket = NOW. Add a
-   "Ship-order read" paragraph and a note on anything recently promoted
-   from NOW to RELEASED.
-9. **NEXT** — `Ready for Development` items. Include a **Q2 realism**
-   column for each row (Must-start / Defer to Q3 / etc.) based on size,
-   priority, and labels. Explicitly note:
+   sections too — those are analytical cuts on the same data. Both of
+   those tables must also carry a `Theme` column (third column, after
+   Title) so the renderer can read a theme even when an explicit
+   `## RELEASED` section hasn't been populated yet.
+
+8. **NOW** — active build or QA. Items whose bucket = NOW. Table shape
+   (Theme required):
+
+   ```
+   | Issue | Title | Theme | Status | Priority | Size | Repo | Tags |
+   ```
+
+   Add a "Ship-order read" paragraph and a note on anything recently
+   promoted from NOW to RELEASED.
+
+9. **NEXT** — `Ready for Development` items. Table shape (Theme required):
+
+   ```
+   | Issue | Title | Theme | Priority | Size | Tags | Q2 realism |
+   ```
+
+   Include a **Q2 realism** column for each row (Must-start / Defer to
+   Q3 / etc.) based on size, priority, and labels. Explicitly note:
    - L/XL items from a cold start won't ship in ~6 weeks
    - Items carrying the `Competitive Parity` label get a "parity play"
      flag in the Tags column (use the literal `` `Competitive Parity` label ``)
-10. **LATER** — organized by theme:
-    - Theme 1: Agentic / Copilot evolution
-    - Theme 2: Teacher-in-the-loop intelligence
-    - Theme 3: Quality & evaluation stack (flag that dependency risk is
+10. **LATER** — organized by theme. Use `### Theme N — <exact theme name from
+    the canonical palette>` as each subsection header. Only include themes
+    that actually have LATER items; themes with zero LATER items (e.g., Arabic
+    if all Arabic work is currently in flight) are simply skipped here and
+    still appear in the theme-portfolio scorecard at the top. Typical
+    ordering:
+    - Agentic / Copilot evolution
+    - Teacher-in-the-loop intelligence
+    - Quality & evaluation stack (flag that dependency risk is
       concentrated here — all High priority, all Blocked or unprioritized)
-    - Theme 4: Integrations & LMS breadth
-    - Theme 5: Monetization (flag under-weighting risk)
+    - Arabic / Multilingual (only if LATER items exist)
+    - Integrations & LMS breadth
+    - Monetization (flag under-weighting risk)
 
     For any item carrying the `Competitive Parity` label that fits a topical
     theme, annotate it with ⚔️ in the theme table and add a footnote:

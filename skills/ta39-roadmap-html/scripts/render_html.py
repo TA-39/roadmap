@@ -47,6 +47,12 @@ THEME_PALETTE: dict[str, dict[str, str]] = {
         "color": "#e11d48", "bg": "#fff1f2",
         "border": "#fecdd3", "text": "#881337",
     },
+    # Arabic / Multilingual — the market-bet theme. Distinct teal so it
+    # reads as its own investment line, not Platform housekeeping.
+    "Arabic / Multilingual": {
+        "color": "#0d9488", "bg": "#f0fdfa",
+        "border": "#99f6e4", "text": "#134e4a",
+    },
     "Integrations & LMS breadth": {
         "color": "#d97706", "bg": "#fffbeb",
         "border": "#fde68a", "text": "#78350f",
@@ -129,6 +135,40 @@ def _extract_table_rows(section: str) -> list[list[str]]:
     return tbl[1:] if len(tbl) > 1 else []
 
 
+def _extract_table(section: str) -> tuple[list[str], list[list[str]]]:
+    """Return (headers, data_rows). Empty lists if no table found."""
+    tbl = _extract_first_table(section)
+    if not tbl:
+        return [], []
+    return tbl[0], tbl[1:]
+
+
+def _col_idx(headers: list[str], *candidates: str) -> int:
+    """Return the index of the first header that matches any candidate,
+    case-insensitive, on either the full header or a substring match.
+    -1 if nothing matches."""
+    if not headers:
+        return -1
+    lowered = [h.strip().lower() for h in headers]
+    for cand in candidates:
+        c = cand.strip().lower()
+        if c in lowered:
+            return lowered.index(c)
+    for cand in candidates:
+        c = cand.strip().lower()
+        for i, h in enumerate(lowered):
+            if c and c in h:
+                return i
+    return -1
+
+
+def _cell(row: list[str], idx: int, default: str = "") -> str:
+    """Safe cell accessor — returns default if idx is -1 or out of range."""
+    if idx < 0 or idx >= len(row):
+        return default
+    return row[idx]
+
+
 def _parse_issue_cell(cell: str) -> tuple[str | None, str | None, str]:
     m = ISSUE_LINK_RE.search(cell)
     if not m:
@@ -155,11 +195,21 @@ def _strip_inline_links(s: str) -> str:
 # ---------------------------------------------------------------------------
 
 def classify_by_keyword(title: str) -> str | None:
+    """FALLBACK ONLY. The canonical source of a feature's theme is the
+    `Theme` column in the MD (or the `### Theme N — ...` header for LATER).
+    This function only runs when a row has no Theme column value and isn't
+    under a LATER theme header — and when it fires we warn on stderr so the
+    MD can be fixed.
+    """
     t = title.lower()
     if "copilot" in t or "agent" in t:
         return "Agentic / Copilot evolution"
     if any(k in t for k in ("rubric", "template", "exemplar", "revision", "learning loop", "class analysis", "analysis report")):
         return "Teacher-in-the-loop intelligence"
+    # Arabic / Multilingual is its own strategic theme — check before
+    # LMS / eval keywords to avoid Arabic-NLP work leaking into Quality & eval.
+    if any(k in t for k in ("arabic", "rtl", "htr", "handwriting", "i18n", "multilingual", "internationalization")):
+        return "Arabic / Multilingual"
     if any(k in t for k in ("lms", "canvas", "classroom", "teams", "lti")):
         return "Integrations & LMS breadth"
     if any(k in t for k in ("eval", "sentinel", "quality", "confidence", "baseline")):
@@ -168,8 +218,6 @@ def classify_by_keyword(title: str) -> str | None:
         return "Monetization"
     if "plagiarism" in t:
         return "Competitive Parity"
-    if any(k in t for k in ("arabic", "rtl", "i18n", "international", "htr", "handwriting")):
-        return "Quality & evaluation stack"
     return None
 
 
@@ -229,20 +277,27 @@ def parse_announcement_xref(md: str) -> list[dict[str, Any]]:
     # The section goes until NOW (or RELEASED if present).
     next_re = RELEASED_HEADER_RE if RELEASED_HEADER_RE.search(md) else NOW_HEADER_RE
     section = _extract_section(md, ANNOUNCE_XREF_RE, next_re)
+    headers, rows = _extract_table(section)
+    issue_i = _col_idx(headers, "issue", "#")
+    title_i = _col_idx(headers, "title")
+    theme_i = _col_idx(headers, "theme")
+    tags_i = _col_idx(headers, "tags")
     out: list[dict[str, Any]] = []
-    for row in _extract_table_rows(section):
-        if len(row) < 2:
+    for row in rows:
+        if not row:
             continue
-        num, url, _ = _parse_issue_cell(row[0])
+        issue_cell = _cell(row, issue_i if issue_i >= 0 else 0)
+        num, url, _ = _parse_issue_cell(issue_cell)
         if not num:
             continue
-        tags_cell = row[-1]
+        tags_cell = _cell(row, tags_i if tags_i >= 0 else len(row) - 1)
         announced = "ANNOUNCED" in tags_cell.upper()
         featured = "FEATURED" in tags_cell.upper()
         out.append({
             "num": num,
             "url": url,
-            "title": _strip_md(_strip_inline_links(row[1])),
+            "title": _strip_md(_strip_inline_links(_cell(row, title_i if title_i >= 0 else 1))),
+            "theme_raw": _cell(row, theme_i),
             "bucket": "released",
             "announced": announced,
             "featured": featured,
@@ -253,18 +308,27 @@ def parse_announcement_xref(md: str) -> list[dict[str, Any]]:
 
 def parse_hidden_inventory(md: str) -> list[dict[str, Any]]:
     section = _extract_section(md, HIDDEN_INV_RE, RISKS_RE)
+    headers, rows = _extract_table(section)
+    issue_i = _col_idx(headers, "issue", "#")
+    title_i = _col_idx(headers, "title")
+    theme_i = _col_idx(headers, "theme")
+    repo_i = _col_idx(headers, "repo")
+    status_i = _col_idx(headers, "status")
     out: list[dict[str, Any]] = []
-    for row in _extract_table_rows(section):
-        if len(row) < 3:
+    for row in rows:
+        if not row:
             continue
-        num, url, _ = _parse_issue_cell(row[0])
+        issue_cell = _cell(row, issue_i if issue_i >= 0 else 0)
+        num, url, _ = _parse_issue_cell(issue_cell)
         if not num:
             continue
         out.append({
             "num": num,
             "url": url,
-            "title": _strip_md(row[1]),
-            "repo": row[2] if len(row) > 2 else "",
+            "title": _strip_md(_cell(row, title_i if title_i >= 0 else 1)),
+            "theme_raw": _cell(row, theme_i),
+            "repo": _cell(row, repo_i),
+            "status": _cell(row, status_i),
             "bucket": "released",
             "announced": False,
             "featured": False,
@@ -276,29 +340,43 @@ def parse_hidden_inventory(md: str) -> list[dict[str, Any]]:
 def parse_released_explicit(md: str) -> list[dict[str, Any]]:
     """Parse an explicit `## RELEASED` section if the MD has one.
 
-    Expected columns: Issue | Title | Repo | Status | Tags (optional).
-    Tags cell is inspected for `[ANNOUNCED]` and `[FEATURED]`.
+    Columns are read by header name so shape evolves gracefully. The
+    Theme column (when present) is captured as `theme_raw` and resolved
+    by `resolve_theme()` once all parsers have run.
 
     Returns [] if the section doesn't exist — the renderer falls back
     to deriving RELEASED from announcement xref + hidden inventory.
     """
     section = _extract_section(md, RELEASED_HEADER_RE, NOW_HEADER_RE)
+    headers, rows = _extract_table(section)
+    issue_i = _col_idx(headers, "issue", "#")
+    title_i = _col_idx(headers, "title")
+    theme_i = _col_idx(headers, "theme")
+    repo_i = _col_idx(headers, "repo")
+    priority_i = _col_idx(headers, "priority")
+    size_i = _col_idx(headers, "size")
+    status_i = _col_idx(headers, "status")
+    tags_i = _col_idx(headers, "tags")
     out: list[dict[str, Any]] = []
-    for row in _extract_table_rows(section):
-        if len(row) < 2:
+    for row in rows:
+        if not row:
             continue
-        num, url, _ = _parse_issue_cell(row[0])
+        issue_cell = _cell(row, issue_i if issue_i >= 0 else 0)
+        num, url, _ = _parse_issue_cell(issue_cell)
         if not num:
             continue
-        tags_cell = row[-1] if len(row) >= 5 else ""
+        tags_cell = _cell(row, tags_i if tags_i >= 0 else len(row) - 1)
         announced = "ANNOUNCED" in tags_cell.upper()
         featured = "FEATURED" in tags_cell.upper()
         out.append({
             "num": num,
             "url": url,
-            "title": _strip_md(row[1]),
-            "repo": row[2] if len(row) > 2 else "",
-            "status": row[3] if len(row) > 3 else "",
+            "title": _strip_md(_cell(row, title_i if title_i >= 0 else 1)),
+            "theme_raw": _cell(row, theme_i),
+            "repo": _cell(row, repo_i),
+            "priority": _cell(row, priority_i),
+            "size": _cell(row, size_i),
+            "status": _cell(row, status_i),
             "bucket": "released",
             "announced": announced,
             "featured": featured,
@@ -326,18 +404,31 @@ def resolve_released(md: str) -> list[dict[str, Any]]:
 
 def parse_now(md: str) -> list[dict[str, Any]]:
     section = _extract_section(md, NOW_HEADER_RE, NEXT_HEADER_RE)
+    headers, rows = _extract_table(section)
+    issue_i = _col_idx(headers, "issue", "#")
+    title_i = _col_idx(headers, "title")
+    theme_i = _col_idx(headers, "theme")
+    status_i = _col_idx(headers, "status")
+    priority_i = _col_idx(headers, "priority")
+    size_i = _col_idx(headers, "size")
+    repo_i = _col_idx(headers, "repo")
+    tags_i = _col_idx(headers, "tags")
     out: list[dict[str, Any]] = []
-    for row in _extract_table_rows(section):
-        if len(row) < 6:
+    for row in rows:
+        if not row:
             continue
-        num, url, _ = _parse_issue_cell(row[0])
+        num, url, _ = _parse_issue_cell(_cell(row, issue_i if issue_i >= 0 else 0))
         if not num:
             continue
         out.append({
             "num": num, "url": url,
-            "title": _strip_md(row[1]),
-            "status": row[2], "priority": row[3], "size": row[4],
-            "repo": row[5] if len(row) > 5 else "",
+            "title": _strip_md(_cell(row, title_i if title_i >= 0 else 1)),
+            "theme_raw": _cell(row, theme_i),
+            "status": _cell(row, status_i),
+            "priority": _cell(row, priority_i),
+            "size": _cell(row, size_i),
+            "repo": _cell(row, repo_i),
+            "tags": _cell(row, tags_i),
             "bucket": "now",
             "announced": False, "featured": False,
             "parity_overlay": _has_parity_overlay(" | ".join(row)),
@@ -347,18 +438,29 @@ def parse_now(md: str) -> list[dict[str, Any]]:
 
 def parse_next(md: str) -> list[dict[str, Any]]:
     section = _extract_section(md, NEXT_HEADER_RE, LATER_HEADER_RE)
+    headers, rows = _extract_table(section)
+    issue_i = _col_idx(headers, "issue", "#")
+    title_i = _col_idx(headers, "title")
+    theme_i = _col_idx(headers, "theme")
+    priority_i = _col_idx(headers, "priority")
+    size_i = _col_idx(headers, "size")
+    tags_i = _col_idx(headers, "tags")
+    realism_i = _col_idx(headers, "q2 realism", "realism")
     out: list[dict[str, Any]] = []
-    for row in _extract_table_rows(section):
-        if len(row) < 5:
+    for row in rows:
+        if not row:
             continue
-        num, url, _ = _parse_issue_cell(row[0])
+        num, url, _ = _parse_issue_cell(_cell(row, issue_i if issue_i >= 0 else 0))
         if not num:
             continue
         out.append({
             "num": num, "url": url,
-            "title": _strip_md(row[1]),
-            "priority": row[2], "size": row[3],
-            "tags": row[4] if len(row) > 4 else "",
+            "title": _strip_md(_cell(row, title_i if title_i >= 0 else 1)),
+            "theme_raw": _cell(row, theme_i),
+            "priority": _cell(row, priority_i),
+            "size": _cell(row, size_i),
+            "tags": _cell(row, tags_i),
+            "realism": _cell(row, realism_i),
             "bucket": "next",
             "announced": False, "featured": False,
             "parity_overlay": _has_parity_overlay(" | ".join(row)),
@@ -467,13 +569,218 @@ _SILENT_BADGE = ("SILENT", "#475569", "#f1f5f9", "#cbd5e1",
                  "Released with no community post")
 
 
+_THEME_SHORT = {
+    "Agentic / Copilot evolution": "Agentic",
+    "Teacher-in-the-loop intelligence": "Teacher-in-loop",
+    "Quality & evaluation stack": "Quality & eval",
+    "Arabic / Multilingual": "Arabic",
+    "Integrations & LMS breadth": "Integrations",
+    "Monetization": "Monetization",
+    "Competitive Parity": "Parity",
+    "Platform & UX": "Platform",
+}
+
+
+# Alias table — accepts the various names the MD has historically used
+# and normalizes to a canonical theme. Extend when adding new aliases; do
+# NOT rename the canonical keys in THEME_PALETTE without updating both
+# skills in the same commit.
+_THEME_ALIASES = {
+    # canonical → canonical (identity)
+    "agentic / copilot evolution": "Agentic / Copilot evolution",
+    "agentic": "Agentic / Copilot evolution",
+    "copilot": "Agentic / Copilot evolution",
+    "teacher-in-the-loop intelligence": "Teacher-in-the-loop intelligence",
+    "teacher-in-the-loop": "Teacher-in-the-loop intelligence",
+    "teacher-in-loop": "Teacher-in-the-loop intelligence",
+    "hitl": "Teacher-in-the-loop intelligence",
+    "quality & evaluation stack": "Quality & evaluation stack",
+    "quality & eval": "Quality & evaluation stack",
+    "quality and evaluation stack": "Quality & evaluation stack",
+    "eval": "Quality & evaluation stack",
+    "arabic / multilingual": "Arabic / Multilingual",
+    "arabic": "Arabic / Multilingual",
+    "multilingual": "Arabic / Multilingual",
+    "i18n": "Arabic / Multilingual",
+    "integrations & lms breadth": "Integrations & LMS breadth",
+    "integrations": "Integrations & LMS breadth",
+    "lms": "Integrations & LMS breadth",
+    "monetization": "Monetization",
+    "competitive parity": "Competitive Parity",
+    "parity": "Competitive Parity",
+    "platform & ux": "Platform & UX",
+    "platform": "Platform & UX",
+    "ux": "Platform & UX",
+}
+
+
+def _canonicalize_theme(raw: str | None) -> str | None:
+    """Normalize a theme string from the MD into a canonical theme name.
+    Returns None if the input is empty / dash / cannot be resolved."""
+    if not raw:
+        return None
+    s = raw.strip()
+    # Strip markdown italics / quotes / parentheticals
+    s = _re.sub(r"^[*`_\"']+|[*`_\"']+$", "", s).strip()
+    s = _re.sub(r"\s*\([^)]*\)\s*$", "", s).strip()
+    if not s or s in ("—", "-", "–"):
+        return None
+    key = s.lower()
+    if key in _THEME_ALIASES:
+        return _THEME_ALIASES[key]
+    # Loose match — try the canonical palette keys directly
+    for canonical in THEME_PALETTE.keys():
+        if key == canonical.lower():
+            return canonical
+    if s == PLATFORM_THEME:
+        return PLATFORM_THEME
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Card title cleanup
+# ---------------------------------------------------------------------------
+#
+# GitHub issue titles are written for engineers, not for a 220px-wide card on
+# an exec dashboard. They pack in Epic markers, acronym expansions, subsystem
+# qualifiers, and marketing-adjacent phrasing that all read as noise on a
+# poster. We do two things:
+#
+#   1. Hand-curated overrides for the titles that no rule-set cleans up well.
+#      The key is the issue number. Keep these tight — 2 to 5 words, strong
+#      nouns, real-world language an exec would recognize.
+#   2. A rule-based cleanup as the fallback: strip leading bracket tags,
+#      strip trailing parentheticals, drop common verbose prefixes, collapse
+#      whitespace, and length-cap with an ellipsis.
+#
+# The short title is what appears on the card. The full title remains in the
+# tooltip (title="...") so anyone hovering sees the verbatim GitHub title.
+
+_TITLE_OVERRIDES: dict[str, str] = {
+    # Released / announced
+    "697": "Revision Rounds",
+    "343": "Rubric UI Overhaul",
+    "344": "Feedback Template Creation",
+    "440": "Assignment Exemplars",
+    "384": "Teacher Copilot",
+    "385": "Student Copilot",
+    "366": "Context-Aware Copilot Panels",
+    "378": "Google Docs Submissions (LTI)",
+    "20":  "Eval Harness M1 — Foundations",
+    "188": "Class Analysis Report UI",
+    "297": "Markdown Rendering in Text Pane",
+    "532": "Internationalization (i18n)",
+    "720": "UI Refresh — Revolt Design",
+    # Now (in flight)
+    "6":   "Sentinel Baseline Evaluation",
+    "166": "Arabic Summary Report",
+    "596": "Arabic NLP Enablement",
+    # Next (Ready for Dev)
+    "99":  "Arabic Handwriting Recognition",
+    "327": "Plagiarism Detection",
+    "701": "Microsoft Teams LMS Integration",
+    "740": "Revision Rounds — Learning Loop",
+    # Later — Agentic
+    "547": "Agentic Instruction Platform",
+    "649": "Agentic Copilot in Core UI",
+    "474": "Voice-Based Assignments",
+    # Later — HITL
+    "328": "Student-Teacher Feedback Disputes",
+    "331": "Teacher-Led AI Calibration",
+    "113": "Socratic Writing Feedback",
+    # Later — Quality & eval
+    "7":   "Sentinel Manager UI",
+    "14":  "Eval Harness — Multi-Metric Framework",
+    "19":  "Eval Harness M2 — Observability",
+    "21":  "Eval Harness M3 — Quality Gates",
+    "22":  "Eval Harness M4 — Governance",
+    "29":  "Two-Stage Feedback Architecture",
+    "35":  "Confidence Scoring",
+    # Later — Integrations
+    "473": "Canvas Discussions as Source",
+    "226": "Google Classroom Re-use",
+    # Later — Monetization
+    "374": "Stripe Individual Subscriptions",
+}
+
+
+_LEADING_TAG_RE = _re.compile(r"^\s*(?:\[[^\]]+\]\s*)+")
+_TRAILING_PAREN_RE = _re.compile(r"\s*\([^)]*\)\s*$")
+
+
+def _clean_title(raw: str, num: str | int = "") -> str:
+    """Shorten a verbose GitHub issue title into something that reads
+    well on a card. Prefers the hand-curated override when present."""
+    key = str(num or "").strip()
+    if key and key in _TITLE_OVERRIDES:
+        return _TITLE_OVERRIDES[key]
+
+    t = (raw or "").strip()
+    # Strip leading bracket tags — e.g., "[Stream 3][Epic] ", "[Evaluation Harness] "
+    t = _LEADING_TAG_RE.sub("", t)
+    # Strip a single trailing parenthetical (acronym expansion / qualifier)
+    t = _TRAILING_PAREN_RE.sub("", t)
+    # Common verbose-prefix removals
+    for prefix in (
+        "Update UI for ",
+        "User Requirement — ",
+        "User Requirement - ",
+        "Evolve TA39 Into an ",
+        "Evolve TA39 Into a ",
+        "Support for ",
+        "Support ",
+    ):
+        if t.startswith(prefix):
+            t = t[len(prefix):]
+            break
+    # Shorten a couple of long nouns in place
+    t = t.replace("Evaluation Harness", "Eval Harness")
+    # Collapse whitespace
+    t = _re.sub(r"\s+", " ", t).strip()
+    # Length cap — soft, at a word boundary
+    MAX = 52
+    if len(t) > MAX:
+        cut = t[:MAX].rsplit(" ", 1)[0].rstrip(" ,:;—–-")
+        t = (cut or t[:MAX]) + "…"
+    return t
+
+
+_PRIORITY_STYLE = {
+    "HIGH":   ("High",   "#b91c1c", "#fee2e2"),
+    "MEDIUM": ("Medium", "#b45309", "#fef3c7"),
+    "LOW":    ("Low",    "#475569", "#f1f5f9"),
+}
+
+
+def _priority_pill(priority: str) -> str:
+    key = (priority or "").strip().upper()
+    if key not in _PRIORITY_STYLE:
+        return ""
+    label, fg, bg = _PRIORITY_STYLE[key]
+    return (
+        '<span class="inline-flex items-center gap-1 text-[10px] font-medium rounded px-1.5 py-0.5" '
+        f'style="color:{fg};background:{bg}">'
+        f'<span class="inline-block w-1.5 h-1.5 rounded-full" style="background:{fg}"></span>'
+        f'{label}</span>'
+    )
+
+
 def _card(item: dict[str, Any], theme: str | None) -> str:
+    """A clean card that keeps the information density a PM needs at a glance.
+
+    We show: theme (named, not just colored), issue number, title, priority
+    (colored dot + label), plus the public-surface badges. We drop abbreviated
+    P:/S: chips and the repo column — those are easy to click through for.
+    """
     pal = _palette_for(theme)
     href = _html.escape(item.get("url") or "#")
-    title = _html.escape(item.get("title", ""))
+    raw_title = item.get("title", "")
     num = item.get("num", "")
+    short_title = _clean_title(raw_title, num)
+    title = _html.escape(short_title)
+    tooltip = _html.escape(raw_title, quote=True)
+    theme_label = _THEME_SHORT.get(theme or "", theme or "")
 
-    # Top-right badges (visible at the card level, not just in the pill).
     badges: list[str] = []
     if item.get("featured"):
         badges.append(_badge(*_FEAT_BADGE))
@@ -481,40 +788,87 @@ def _card(item: dict[str, Any], theme: str | None) -> str:
         badges.append(_badge(*_ANN_BADGE))
     if item.get("parity_overlay"):
         badges.append(_badge(*_PARITY_BADGE))
-    # Silent = RELEASED but neither announced nor featured.
     if item.get("bucket") == "released" and not item.get("announced") and not item.get("featured"):
         badges.append(_badge(*_SILENT_BADGE))
     badges_html = " ".join(badges)
 
-    # Meta pills (priority / size / status).
-    pills = []
-    for k, label in (("priority", "P"), ("size", "S")):
-        v = (item.get(k) or "").strip()
-        if v and v != "—":
-            pills.append(
-                '<span class="text-[10px] rounded px-1 py-0.5 bg-slate-100 text-slate-600">'
-                f'{label}:{_html.escape(v)}</span>'
-            )
+    # Bottom meta row: priority pill + optional in-flight status.
+    meta_bits: list[str] = []
+    p_pill = _priority_pill(item.get("priority", ""))
+    if p_pill:
+        meta_bits.append(p_pill)
     status = (item.get("status") or "").strip()
-    if status and status != "—":
-        pills.append(
-            '<span class="text-[10px] rounded px-1 py-0.5 bg-slate-50 '
-            f'text-slate-500 border border-slate-200">{_html.escape(status)}</span>'
+    if status and status not in ("", "—") and item.get("bucket") == "next":
+        meta_bits.append(
+            '<span class="text-[10px] text-slate-500">'
+            f'{_html.escape(status)}</span>'
         )
-    pills_html = " ".join(pills)
+    meta_html = " ".join(meta_bits)
 
     return (
-        '<div class="relative rounded-lg border p-2 bg-white shadow-sm" '
-        f'style="border-color:{pal["border"]}">'
-        '<div class="flex items-start justify-between gap-2 mb-1">'
-        f'<a href="{href}" class="font-mono text-xs leading-none pt-0.5" '
-        f'style="color:{pal["color"]}">#{num}</a>'
+        '<a href="' + href + '" class="block group rounded-xl bg-white '
+        'border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] '
+        'hover:shadow-[0_4px_12px_rgba(15,23,42,0.10)] hover:-translate-y-0.5 '
+        'transition-all duration-150 overflow-hidden" '
+        f'title="{tooltip}" '
+        f'style="border-left:3px solid {pal["color"]}">'
+        '<div class="p-3">'
+        # Theme label + badges
+        '<div class="flex items-start justify-between gap-2 mb-1.5">'
+        f'<span class="text-[10px] font-semibold uppercase tracking-wider" '
+        f'style="color:{pal["color"]}">{_html.escape(theme_label)}</span>'
         f'<div class="flex flex-wrap gap-0.5 justify-end">{badges_html}</div>'
         '</div>'
-        f'<div class="text-[13px] leading-snug text-slate-800 mb-1">{title}</div>'
-        f'<div class="flex flex-wrap gap-1">{pills_html}</div>'
+        # Number + title
+        '<div class="flex items-baseline gap-2 mb-2">'
+        f'<span class="font-mono text-[11px] text-slate-400 tabular-nums leading-none">#{num}</span>'
+        f'<span class="text-[13px] leading-snug text-slate-800 group-hover:text-slate-900 font-medium">{title}</span>'
         '</div>'
+        # Meta row
+        f'<div class="flex flex-wrap items-center gap-1.5">{meta_html}</div>'
+        '</div>'
+        '</a>'
     )
+
+
+# ---------------------------------------------------------------------------
+# Sorting
+# ---------------------------------------------------------------------------
+
+_PRIORITY_ORDER = {
+    "HIGH": 3,
+    "MEDIUM": 2,
+    "LOW": 1,
+    "": 0,
+    "—": 0,
+    "NONE": 0,
+}
+
+
+def _priority_rank(item: dict[str, Any]) -> int:
+    p = (item.get("priority") or "").strip().upper()
+    return _PRIORITY_ORDER.get(p, 0)
+
+
+def _num_desc(item: dict[str, Any]) -> int:
+    """Issue number as a recency proxy — higher numbers tend to be
+    more recently filed. Cross-repo numbers aren't directly comparable
+    but within ta-39 this gets us roughly the right stacking for
+    RELEASED until the fetch script captures real shipped dates."""
+    try:
+        return int(item.get("num") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _sort_general(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Priority descending. Stable within priority."""
+    return sorted(items, key=lambda it: -_priority_rank(it))
+
+
+def _sort_released(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Priority descending, then recency (issue number) descending."""
+    return sorted(items, key=lambda it: (-_priority_rank(it), -_num_desc(it)))
 
 
 # ---------------------------------------------------------------------------
@@ -577,52 +931,63 @@ def render(md_path: str, out_path: str) -> None:
     # Theme assignment for every bucket — LATER already has explicit themes
     # from `### Theme N — ...` headers. RELEASED / NOW / NEXT need keyword
     # inference. Fall back to Platform & UX for non-matching items.
+    # Theme resolution — explicit Theme column from the MD first, then
+    # LATER subsection assignment, and only as a last resort the keyword
+    # inference (warning on stderr so the MD can be fixed).
+    inferred: list[tuple[str, str]] = []  # (num, inferred theme)
+
     def classify(it: dict[str, Any]) -> str:
+        explicit = _canonicalize_theme(it.get("theme_raw"))
+        if explicit:
+            return explicit
         for theme, items in later.items():
             if any(x["num"] == it["num"] for x in items):
                 return theme
         kw = classify_by_keyword(it.get("title") or "")
-        if kw:
-            return kw
-        return PLATFORM_THEME
+        chosen = kw or PLATFORM_THEME
+        inferred.append((it.get("num", "?"), chosen))
+        return chosen
 
     for lst in (released_items, now_items, next_items):
         for it in lst:
             it["_theme"] = classify(it)
 
-    # Matrix: Theme → {released/now/next/later: [items]}
-    themes_in_order = list(THEME_PALETTE.keys())
-    for t in later.keys():
-        if t not in themes_in_order:
-            themes_in_order.append(t)
+    if inferred:
+        pairs = ", ".join(f"#{n}→{t}" for n, t in inferred)
+        print(
+            f"[ta39-roadmap-html] WARN: theme inferred for {len(inferred)} "
+            f"item(s) — add a `Theme` column entry to the MD to fix: {pairs}",
+            file=_sys.stderr,
+        )
 
-    matrix: dict[str, dict[str, list[dict[str, Any]]]] = {
-        t: {"released": [], "now": [], "next": [], "later": []}
-        for t in themes_in_order
-    }
-
-    def _bucket_add(t: str, bucket: str, item: dict[str, Any]) -> None:
-        matrix.setdefault(t, {"released": [], "now": [], "next": [], "later": []})
-        matrix[t][bucket].append(item)
-
-    for it in released_items:
-        _bucket_add(it["_theme"], "released", it)
-    for it in now_items:
-        _bucket_add(it["_theme"], "now", it)
-    for it in next_items:
-        _bucket_add(it["_theme"], "next", it)
+    # Flatten LATER — we don't need per-theme grouping anymore. Each
+    # card carries its theme color on the left border, which is enough
+    # identity at the card level.
+    later_flat: list[dict[str, Any]] = []
     for theme, items in later.items():
         for it in items:
             it.setdefault("_theme", theme)
-        matrix.setdefault(theme, {"released": [], "now": [], "next": [], "later": []})
-        matrix[theme]["later"].extend(items)
+            it.setdefault("bucket", "later")
+            later_flat.append(it)
 
-    # Put the fallback theme last if any items ended up there.
-    for t in list(matrix.keys()):
-        if t not in themes_in_order:
-            themes_in_order.append(t)
+    # Merge NOW + NEXT into a single NEXT column. The distinction between
+    # "Ready for Development" and "In Progress" matters in planning docs,
+    # not on an executive dashboard.
+    for it in now_items:
+        it["bucket"] = "next"
+    for it in next_items:
+        it["bucket"] = "next"
+    for it in released_items:
+        it.setdefault("bucket", "released")
 
-    # KPI strip
+    next_merged = now_items + next_items
+
+    # Sort each column.
+    released_sorted = _sort_released(released_items)
+    next_sorted = _sort_general(next_merged)
+    later_sorted = _sort_general(later_flat)
+
+    # KPI strip (still useful at the top for absolute counts).
     kpi_html = "".join(_kpi_tile(lbl, cnt) for lbl, cnt in status_kpis)
 
     # Silent-inventory count for the context line
@@ -651,74 +1016,132 @@ def render(md_path: str, out_path: str) -> None:
         + _badge(*_PARITY_BADGE) + ' <span class="text-xs text-slate-600">Competitive Parity label</span>'
     )
 
-    # Theme portfolio matrix (5 columns: Theme | RELEASED | NOW | NEXT | LATER)
-    matrix_rows = []
-    for theme in themes_in_order:
-        if theme not in matrix:
-            continue
-        if not any(matrix[theme].values()):
-            continue
-        pal = _palette_for(theme)
-        cells = []
-        for bucket in ("released", "now", "next", "later"):
-            pills = " ".join(
-                _pill(it["num"], it.get("url"), it, theme)
-                for it in matrix[theme][bucket]
+    # Build the three Kanban columns. Cards are clustered by theme
+    # inside each column so the reader can see "where investment sits"
+    # per theme, while still sorting each cluster by priority desc.
+    def _kanban_column(label: str, sub: str, accent: str,
+                       items: list[dict[str, Any]]) -> str:
+        # Group items by theme, preserving canonical theme order.
+        by_theme: dict[str, list[dict[str, Any]]] = {}
+        for it in items:
+            by_theme.setdefault(it.get("_theme") or PLATFORM_THEME, []).append(it)
+
+        theme_order = [t for t in THEME_PALETTE.keys() if t in by_theme]
+        for t in by_theme:
+            if t not in theme_order:
+                theme_order.append(t)
+
+        if not items:
+            body = (
+                '<div class="text-xs text-slate-300 italic py-8 text-center '
+                'border-2 border-dashed border-slate-200 rounded-xl">Nothing here yet</div>'
             )
-            empty_cell = '<span class="text-slate-300 text-xs">—</span>'
-            cell_content = pills if pills else empty_cell
-            cells.append(
-                '<td class="align-top p-2 border border-slate-200">'
-                f'<div class="flex flex-wrap gap-1">{cell_content}</div>'
-                '</td>'
-            )
-        matrix_rows.append(
-            f'<tr>'
-            f'<th class="text-left align-top p-2 border border-slate-200 text-sm font-semibold" '
-            f'style="color:{pal["text"]};background:{pal["bg"]};border-color:{pal["border"]}">'
-            f'{_html.escape(theme)}</th>'
-            f'{"".join(cells)}'
-            f'</tr>'
+        else:
+            groups_html: list[str] = []
+            for t in theme_order:
+                pal = _palette_for(t)
+                short = _THEME_SHORT.get(t, t)
+                group_items = by_theme[t]
+                cards = "".join(_card(it, t) for it in group_items)
+                groups_html.append(
+                    '<div class="mb-5 last:mb-0">'
+                    # Theme cluster label
+                    '<div class="flex items-center justify-between mb-2 px-1">'
+                    '<div class="flex items-center gap-1.5">'
+                    f'<span class="inline-block w-1.5 h-1.5 rounded-full" style="background:{pal["color"]}"></span>'
+                    f'<span class="text-[10px] font-bold uppercase tracking-wider" style="color:{pal["text"]}">{_html.escape(short)}</span>'
+                    '</div>'
+                    f'<span class="text-[10px] font-medium tabular-nums text-slate-400">{len(group_items)}</span>'
+                    '</div>'
+                    f'<div class="space-y-2">{cards}</div>'
+                    '</div>'
+                )
+            body = "".join(groups_html)
+
+        return (
+            '<div class="kanban-col">'
+            '<div class="mb-5">'
+            f'<div class="h-1 rounded-full mb-4" style="background:{accent}"></div>'
+            '<div class="flex items-baseline justify-between">'
+            '<div>'
+            f'<h2 class="text-lg font-bold tracking-tight" style="color:{accent}">{label}</h2>'
+            f'<p class="text-[11px] text-slate-500 mt-0.5">{sub}</p>'
+            '</div>'
+            '<div class="text-right">'
+            f'<div class="text-3xl font-extrabold tabular-nums" style="color:{accent}">{len(items)}</div>'
+            '</div>'
+            '</div>'
+            '</div>'
+            f'{body}'
+            '</div>'
         )
 
-    # Swim lanes: per-theme Kanban with 4 columns
-    lanes = []
-    for theme in themes_in_order:
-        if theme not in matrix:
-            continue
-        if not any(matrix[theme].values()):
-            continue
-        pal = _palette_for(theme)
-        cols = []
-        for bucket_key, bucket_label in (
-            ("released", "RELEASED"),
-            ("now", "NOW"),
-            ("next", "NEXT"),
-            ("later", "LATER"),
-        ):
-            cards = "".join(
-                _card(it, theme) for it in matrix[theme][bucket_key]
-            ) or '<div class="text-xs text-slate-300">—</div>'
-            count_html = (
-                f'<span class="text-slate-400 font-normal">· {len(matrix[theme][bucket_key])}</span>'
-                if matrix[theme][bucket_key] else ""
-            )
-            cols.append(
-                f'<div class="flex-1 min-w-[15rem] space-y-2">'
-                f'<div class="text-[11px] uppercase tracking-wider text-slate-500 mb-1 font-semibold">{bucket_label} {count_html}</div>'
-                f'<div class="space-y-2">{cards}</div>'
-                f'</div>'
-            )
-        lanes.append(
-            f'<section class="border rounded-xl p-3 mb-3" '
-            f'style="border-color:{pal["border"]};background:{pal["bg"]}30">'
-            f'<div class="flex items-center gap-2 mb-3">'
-            f'<span class="inline-block w-2.5 h-2.5 rounded-full" style="background:{pal["color"]}"></span>'
-            f'<h3 class="text-sm font-semibold" style="color:{pal["text"]}">{_html.escape(theme)}</h3>'
-            f'</div>'
-            f'<div class="flex gap-3 flex-wrap">{"".join(cols)}</div>'
-            f'</section>'
+    released_col = _kanban_column(
+        "Released", f"{released_total} shipped · {announced_count} announced · {silent_count} silent",
+        "#059669", released_sorted,
+    )
+    next_col = _kanban_column(
+        "Next", "In build or queued for this quarter",
+        "#2563eb", next_sorted,
+    )
+    later_col = _kanban_column(
+        "Later", "Beyond Q2 — strategic backlog",
+        "#64748b", later_sorted,
+    )
+
+    # Compute per-theme bucket counts — shared by the portfolio matrix.
+    theme_buckets: dict[str, dict[str, int]] = {}
+    for it in released_items:
+        theme_buckets.setdefault(it["_theme"], {"r": 0, "n": 0, "l": 0})["r"] += 1
+    for it in next_merged:
+        theme_buckets.setdefault(it["_theme"], {"r": 0, "n": 0, "l": 0})["n"] += 1
+    for it in later_flat:
+        theme_buckets.setdefault(it["_theme"], {"r": 0, "n": 0, "l": 0})["l"] += 1
+
+    # Theme portfolio matrix — themes as rows, buckets as columns,
+    # each cell shows the item pills. A 3-bucket matrix since NOW
+    # is merged into NEXT.
+    def _bucket_pills(items: list[dict[str, Any]], theme: str) -> str:
+        items_sorted = _sort_general(items)
+        if not items_sorted:
+            return '<span class="text-slate-300 text-xs">—</span>'
+        return " ".join(
+            _pill(it["num"], it.get("url"), it, theme) for it in items_sorted
         )
+
+    matrix_rows_html_list: list[str] = []
+    for t in list(THEME_PALETTE.keys()) + [k for k in theme_buckets if k not in THEME_PALETTE]:
+        if t not in theme_buckets:
+            continue
+        released_for_theme = [it for it in released_sorted if it.get("_theme") == t]
+        next_for_theme = [it for it in next_sorted if it.get("_theme") == t]
+        later_for_theme = [it for it in later_sorted if it.get("_theme") == t]
+        total = len(released_for_theme) + len(next_for_theme) + len(later_for_theme)
+        if total == 0:
+            continue
+        pal = _palette_for(t)
+        short = _THEME_SHORT.get(t, t)
+        matrix_rows_html_list.append(
+            '<tr class="border-t hairline align-top">'
+            '<td class="py-3 pr-4 pl-4">'
+            '<div class="flex items-center gap-2">'
+            f'<span class="inline-block w-2 h-2 rounded-full flex-none" style="background:{pal["color"]}"></span>'
+            f'<span class="text-sm font-semibold text-slate-800">{_html.escape(short)}</span>'
+            '</div>'
+            f'<div class="text-[11px] text-slate-400 mt-0.5 tabular-nums">{total} total</div>'
+            '</td>'
+            '<td class="py-3 px-3"><div class="flex flex-wrap gap-1">'
+            f'{_bucket_pills(released_for_theme, t)}'
+            '</div></td>'
+            '<td class="py-3 px-3"><div class="flex flex-wrap gap-1">'
+            f'{_bucket_pills(next_for_theme, t)}'
+            '</div></td>'
+            '<td class="py-3 pl-3 pr-4"><div class="flex flex-wrap gap-1">'
+            f'{_bucket_pills(later_for_theme, t)}'
+            '</div></td>'
+            '</tr>'
+        )
+    theme_matrix_html = "".join(matrix_rows_html_list)
 
     # Marketing-gap chips
     met_count = sum(1 for g in marketing_gap if g["status"] == "met")
@@ -746,68 +1169,131 @@ def render(md_path: str, out_path: str) -> None:
 <title>TA39 Product Roadmap</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }}
+  :root {{
+    --bg: #fafaf9;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --hair: #e2e8f0;
+  }}
+  body {{
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 80% 40% at 20% 0%, rgba(16,185,129,0.05) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 40% at 80% 0%, rgba(37,99,235,0.05) 0%, transparent 55%);
+    background-attachment: fixed;
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+  }}
   code {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }}
+  .tabular-nums {{ font-variant-numeric: tabular-nums; }}
+  .display {{ letter-spacing: -0.03em; font-feature-settings: "ss01", "cv11"; }}
+  .card-hover:hover {{ transform: translateY(-1px); }}
+  .hairline {{ border-color: var(--hair); }}
 </style>
 </head>
-<body class="bg-slate-50 text-slate-900 p-6">
-<header class="max-w-[1600px] mx-auto mb-4">
-  <h1 class="text-2xl font-semibold">TA39 Product Roadmap</h1>
-  <p class="text-sm text-slate-500 mt-1">
-    Source: <code class="bg-slate-100 px-1 rounded">{_html.escape(_os.path.basename(md_path))}</code>
-    {f"· retrieved {retrieval_date}" if retrieval_date else ""}
-    · {silent_note}
-  </p>
+<body class="text-slate-900 p-6 md:p-12">
+
+<!-- ================ HERO ================ -->
+<header class="max-w-[1400px] mx-auto mb-12">
+  <div class="flex items-baseline justify-between gap-6 flex-wrap">
+    <div>
+      <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-3">
+        TA-39 · Product Development
+      </div>
+      <h1 class="display text-5xl md:text-6xl font-extrabold text-slate-900 leading-[1.05]">
+        Roadmap
+      </h1>
+      <p class="text-base text-slate-500 mt-3 max-w-2xl tabular-nums">
+        36 tracked features across 6 themes.
+        {f"Snapshot taken {retrieval_date}." if retrieval_date else ""}
+        <span class="text-slate-900 font-medium">{silent_note}.</span>
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      {badge_legend}
+    </div>
+  </div>
 </header>
 
-{f'<section class="max-w-[1600px] mx-auto mb-4"><div class="flex flex-wrap gap-2">{kpi_html}</div></section>' if kpi_html else ""}
-
-<section class="max-w-[1600px] mx-auto mb-4 bg-white border border-slate-200 rounded-xl p-4">
-  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-3">
-    {theme_chips}
-  </div>
-  <div class="flex flex-wrap items-center gap-1 text-xs text-slate-500 pt-3 border-t border-slate-100">
-    {badge_legend}
-  </div>
-</section>
-
-<section class="max-w-[1600px] mx-auto mb-4">
-  <h2 class="text-sm font-semibold text-slate-700 mb-2">Theme portfolio matrix</h2>
-  <div class="overflow-x-auto">
-  <table class="w-full border-collapse bg-white border border-slate-200 rounded-xl overflow-hidden text-sm">
-    <thead>
-      <tr class="bg-slate-50 text-slate-600">
-        <th class="text-left p-2 border border-slate-200">Theme</th>
-        <th class="text-left p-2 border border-slate-200">RELEASED</th>
-        <th class="text-left p-2 border border-slate-200">NOW</th>
-        <th class="text-left p-2 border border-slate-200">NEXT</th>
-        <th class="text-left p-2 border border-slate-200">LATER</th>
-      </tr>
-    </thead>
-    <tbody>
-      {"".join(matrix_rows)}
-    </tbody>
-  </table>
+<!-- ================ PILLAR METRICS ================ -->
+<section class="max-w-[1400px] mx-auto mb-10">
+  <div class="grid grid-cols-3 gap-4">
+    <div class="bg-white rounded-2xl border hairline p-5 relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1" style="background:#059669"></div>
+      <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-700 mb-2">Released</div>
+      <div class="display text-5xl font-extrabold text-slate-900 tabular-nums leading-none">{released_total}</div>
+      <div class="text-xs text-slate-500 mt-2 tabular-nums">{announced_count} announced · {silent_count} silent</div>
+    </div>
+    <div class="bg-white rounded-2xl border hairline p-5 relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1" style="background:#2563eb"></div>
+      <div class="text-[10px] font-bold uppercase tracking-widest text-blue-700 mb-2">Next</div>
+      <div class="display text-5xl font-extrabold text-slate-900 tabular-nums leading-none">{len(next_merged)}</div>
+      <div class="text-xs text-slate-500 mt-2">In build or queued for this quarter</div>
+    </div>
+    <div class="bg-white rounded-2xl border hairline p-5 relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1" style="background:#64748b"></div>
+      <div class="text-[10px] font-bold uppercase tracking-widest text-slate-700 mb-2">Later</div>
+      <div class="display text-5xl font-extrabold text-slate-900 tabular-nums leading-none">{len(later_flat)}</div>
+      <div class="text-xs text-slate-500 mt-2">Strategic backlog beyond Q2</div>
+    </div>
   </div>
 </section>
 
-<section class="max-w-[1600px] mx-auto mb-4">
-  <h2 class="text-sm font-semibold text-slate-700 mb-2">Swim lanes — what's out there, what's coming</h2>
-  {"".join(lanes)}
+<!-- ================ THEME PORTFOLIO MATRIX ================ -->
+<section class="max-w-[1400px] mx-auto mb-10">
+  <div class="flex items-baseline justify-between mb-4">
+    <h2 class="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Theme portfolio</h2>
+    <span class="text-xs text-slate-400">What's where, by theme</span>
+  </div>
+  <div class="bg-white rounded-2xl border hairline overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-slate-50 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          <th class="text-left py-3 px-4 w-48">Theme</th>
+          <th class="text-left py-3 px-3" style="color:#059669">Released</th>
+          <th class="text-left py-3 px-3" style="color:#2563eb">Next</th>
+          <th class="text-left py-3 px-4" style="color:#64748b">Later</th>
+        </tr>
+      </thead>
+      <tbody>
+        {theme_matrix_html}
+      </tbody>
+    </table>
+  </div>
 </section>
 
-{f'''<section class="max-w-[1600px] mx-auto mb-4 bg-white border border-slate-200 rounded-xl p-4">
-  <div class="flex items-baseline justify-between mb-2 gap-3 flex-wrap">
-    <h2 class="text-sm font-semibold text-slate-700">Marketing-vs-ship gap</h2>
-    <div class="text-xs">{gap_header}</div>
+{f'''<!-- ================ MARKETING GAP ================ -->
+<section class="max-w-[1400px] mx-auto mb-10">
+  <div class="flex items-baseline justify-between mb-4">
+    <h2 class="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Marketing vs. ship</h2>
+    <div class="text-xs tabular-nums">{gap_header}</div>
   </div>
-  <div class="flex flex-wrap gap-2">{gap_chips}</div>
+  <div class="bg-white rounded-2xl border hairline p-5">
+    <div class="flex flex-wrap gap-2">{gap_chips}</div>
+  </div>
 </section>''' if marketing_gap else ""}
 
-<footer class="max-w-[1600px] mx-auto text-xs text-slate-400 mt-8">
-  Regenerate with the <code>ta39-roadmap-html</code> skill. Data source: {_html.escape(md_path)}
-  <br>Analytical commentary (risks, strategic call-outs, ship-order reads) lives in the MD file — this dashboard is the data view.
+<!-- ================ THE KANBAN ================ -->
+<section class="max-w-[1400px] mx-auto mb-12">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {released_col}
+    {next_col}
+    {later_col}
+  </div>
+</section>
+
+<!-- ================ FOOTER ================ -->
+<footer class="max-w-[1400px] mx-auto text-xs text-slate-400 pt-8 border-t hairline">
+  <div class="flex flex-wrap items-center gap-3">
+    <span>Cards sorted by priority, then recency within Released.</span>
+    <span class="text-slate-300">·</span>
+    <span>Click any card to open the GitHub issue.</span>
+    <span class="text-slate-300">·</span>
+    <span>Deeper analysis in <code class="bg-slate-100 px-1.5 py-0.5 rounded">{_html.escape(_os.path.basename(md_path))}</code>.</span>
+  </div>
 </footer>
+
 </body>
 </html>
 """
