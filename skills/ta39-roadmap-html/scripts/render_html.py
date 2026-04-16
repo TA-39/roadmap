@@ -5,11 +5,17 @@ render_html.py — transform TA39-Roadmap.md into TA39-Roadmap.html.
 Usage:
     python3 render_html.py <md_path> [<out_path>]
 
-Parses the MD's NOW / NEXT / LATER (themed) tables and the Strategic
-Call-outs, then emits a standalone HTML dashboard using Tailwind via CDN
+Parses all 14 MD sections — public-surface tagging rules, Kanban glossary,
+status overview, marketing gap, announcement cross-reference, NOW, NEXT,
+LATER (themed), hidden inventory, risks, strategic call-outs, changes, and
+follow-ups — and emits a standalone HTML dashboard using Tailwind via CDN
 plus custom CSS variables for the theme palette.
 
 No external Python deps — stdlib only.
+
+Section-header parsing is a contract with the MD skill. If you rename a
+section in `ta39-roadmap-md/SKILL.md`, update the matching regex here in
+the same commit.
 """
 
 from __future__ import annotations
@@ -20,8 +26,12 @@ import re as _re
 import sys as _sys
 from typing import Any
 
-# Fixed theme palette.  Adding a theme here requires updating the MD section
-# headers the renderer looks for.
+# ---------------------------------------------------------------------------
+# Theme palette — keys must match the MD skill's LATER theme names verbatim
+# (after normalization). Adding a theme here requires adding a matching
+# `### Theme N — <name>` header in the MD skill.
+# ---------------------------------------------------------------------------
+
 THEME_PALETTE: dict[str, dict[str, str]] = {
     "Agentic / Copilot evolution": {
         "key": "agentic",
@@ -67,20 +77,44 @@ THEME_PALETTE: dict[str, dict[str, str]] = {
     },
 }
 
+# ---------------------------------------------------------------------------
+# Section header regexes. These are load-bearing — the MD skill guarantees
+# the 14-section ordering. Change both sides in the same commit.
+# ---------------------------------------------------------------------------
+
+# Anchor-style headers (level-2 ##)
+PUBLIC_TAGGING_RE = _re.compile(r"^##\s+Public-surface tagging rules\b", _re.M)
+KANBAN_RE = _re.compile(r"^##\s+Kanban Status Glossary\b", _re.M)
+STATUS_OVERVIEW_RE = _re.compile(r"^##\s+Status Overview\b", _re.M)
+MARKETING_GAP_RE = _re.compile(r"^##\s+Marketing-vs-Ship Gap\b", _re.M)
+ANNOUNCE_XREF_RE = _re.compile(r"^##\s+Announcement Cross-Reference\b", _re.M)
+NOW_HEADER_RE = _re.compile(r"^##\s+NOW\b", _re.M)
+NEXT_HEADER_RE = _re.compile(r"^##\s+NEXT\b", _re.M)
+LATER_HEADER_RE = _re.compile(r"^##\s+LATER\b", _re.M)
+HIDDEN_INV_RE = _re.compile(r"^##\s+Shipped but NOT publicly announced\b", _re.M)
+RISKS_RE = _re.compile(r"^##\s+Risks", _re.M)
+STRATEGIC_RE = _re.compile(r"^##\s+Strategic Call-outs\b", _re.M)
+CHANGES_RE = _re.compile(r"^##\s+Changes vs\. the board today\b", _re.M)
+FOLLOWUPS_RE = _re.compile(r"^##\s+Follow-ups I can generate\b", _re.M)
+
+# Capture the full theme label up to end-of-line; post-process to drop the
+# count "(N)" and any trailing italic commentary. The simpler the regex,
+# the fewer things it can miscapture — we normalize in Python, not regex.
+THEME_HEADER_RE = _re.compile(r"^###\s+Theme\s+\d+\s+[—–-]\s+(.+?)\s*$", _re.M)
+
 # Match links like [#697](https://github.com/TA-39/frontend/issues/697)
 ISSUE_LINK_RE = _re.compile(
     r"\[#(\d+)\]\((https?://github\.com/[^)]+/issues/\d+)\)"
 )
 
-# Match bucket section headers
-NOW_HEADER_RE = _re.compile(r"^##\s+NOW\b", _re.M)
-NEXT_HEADER_RE = _re.compile(r"^##\s+NEXT\b", _re.M)
-LATER_HEADER_RE = _re.compile(r"^##\s+LATER\b", _re.M)
-THEME_HEADER_RE = _re.compile(r"^###\s+Theme\s+\d+\s+[—–-]\s+(.+?)(?:\s+\*.*)?$", _re.M)
-HIDDEN_INV_RE = _re.compile(r"^##\s+Shipped but NOT publicly announced\b", _re.M)
 
+# ---------------------------------------------------------------------------
+# Low-level helpers
+# ---------------------------------------------------------------------------
 
-def _extract_section(md: str, start_re: _re.Pattern, next_re: _re.Pattern | None) -> str:
+def _extract_section(
+    md: str, start_re: _re.Pattern, next_re: _re.Pattern | None
+) -> str:
     m = start_re.search(md)
     if not m:
         return ""
@@ -93,26 +127,49 @@ def _extract_section(md: str, start_re: _re.Pattern, next_re: _re.Pattern | None
     return md[start:end]
 
 
-def _extract_table_rows(section: str) -> list[list[str]]:
-    """Return list of rows, each a list of cell strings, for the first
-    pipe-delimited table in the section."""
-    rows: list[list[str]] = []
+def _extract_all_tables(section: str) -> list[list[list[str]]]:
+    """Return every pipe-delimited table in the section. Each table is a
+    list of rows; the first row is the header, separator rows are stripped.
+    """
+    tables: list[list[list[str]]] = []
+    current: list[list[str]] = []
+    saw_sep = False
     in_table = False
     for line in section.splitlines():
         s = line.strip()
         if s.startswith("|") and s.endswith("|"):
             cells = [c.strip() for c in s[1:-1].split("|")]
-            # skip the header separator row (|---|---|...)
             if all(_re.fullmatch(r":?-+:?", c) for c in cells):
-                in_table = True
+                saw_sep = True
                 continue
-            rows.append(cells)
+            current.append(cells)
             in_table = True
-        elif in_table and not s:
-            # blank line ends the first table
-            break
-    # The first non-separator row is the header; remove it
-    return rows[1:] if len(rows) > 1 else []
+        else:
+            if in_table:
+                if current and saw_sep:
+                    tables.append(current)
+                current = []
+                saw_sep = False
+                in_table = False
+    if current and saw_sep:
+        tables.append(current)
+    return tables
+
+
+def _extract_table_rows(section: str) -> list[list[str]]:
+    """Back-compat shim: return the data rows of the first table in a
+    section (i.e. rows after the header)."""
+    tables = _extract_all_tables(section)
+    if not tables:
+        return []
+    first = tables[0]
+    return first[1:] if len(first) > 1 else []
+
+
+def _extract_first_table_with_header(section: str) -> list[list[str]]:
+    """Return the entire first table including the header row."""
+    tables = _extract_all_tables(section)
+    return tables[0] if tables else []
 
 
 def _parse_issue_cell(cell: str) -> tuple[str | None, str | None, str]:
@@ -130,7 +187,200 @@ def _has_parity_overlay(cell: str) -> bool:
     return "⚔" in cell  # matches ⚔️ (with or without variation selector)
 
 
-def parse_now(md: str) -> list[dict[str, Any]]:
+def _strip_md(s: str) -> str:
+    # Light cleanup for plain-text rendering in tooltips / card titles.
+    s = _re.sub(r"\*\*(.+?)\*\*", r"\1", s)
+    s = _re.sub(r"\*(.+?)\*", r"\1", s)
+    return s.strip()
+
+
+def _inline_md(text: str) -> str:
+    """Convert a narrow set of inline markdown to safe HTML: escape first,
+    then re-introduce `code`, **bold**, *italic*, and [label](url) links.
+
+    We explicitly do NOT parse block-level markdown here — use md_prose_to_html
+    for multi-paragraph prose sections.
+    """
+    escaped = _html.escape(text)
+    # Links: [label](url) — re-enable the anchor while keeping the text escaped.
+    def _link_sub(m: _re.Match) -> str:
+        label = m.group(1)
+        url = m.group(2)
+        return (
+            f'<a class="underline decoration-slate-300 hover:decoration-slate-500" '
+            f'href="{url}">{label}</a>'
+        )
+    escaped = _re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _link_sub, escaped)
+    # Inline code
+    escaped = _re.sub(r"`([^`]+)`", r'<code class="bg-slate-100 px-1 rounded">\1</code>', escaped)
+    # Bold then italic (order matters so ** isn't eaten by the single-* rule).
+    escaped = _re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", escaped)
+    escaped = _re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", escaped)
+    return escaped
+
+
+def _parse_list_block(lines: list[str]) -> tuple[str, list[str]]:
+    """Given a run of list lines, return ('ol' or 'ul', list-of-item-html).
+    An ordered list is any line starting with `<digits>.` — mixing with
+    bullets in the same block is treated as ordered.
+    """
+    kind = "ul"
+    items: list[str] = []
+    for ln in lines:
+        m = _re.match(r"^\s*(\d+)\.\s+(.*)$", ln)
+        if m:
+            kind = "ol"
+            items.append(_inline_md(m.group(2)))
+            continue
+        m = _re.match(r"^\s*[-*]\s+(.*)$", ln)
+        if m:
+            items.append(_inline_md(m.group(1)))
+            continue
+        # Continuation of the previous item (rare)
+        if items:
+            items[-1] += " " + _inline_md(ln.strip())
+    return kind, items
+
+
+def md_prose_to_html(text: str) -> str:
+    """Render a slice of MD prose (paragraphs, ordered lists, bulleted
+    lists, inline markup) to HTML. Tables and headers are skipped here —
+    they're handled by the dedicated parsers. This keeps the renderer
+    deterministic and side-steps pulling in a full markdown lib.
+    """
+    out: list[str] = []
+    block: list[str] = []
+    mode: str | None = None  # None | "para" | "list"
+
+    def _flush_para() -> None:
+        if not block:
+            return
+        joined = " ".join(b.strip() for b in block).strip()
+        if joined:
+            out.append(f'<p class="text-sm text-slate-700 leading-relaxed mb-3">{_inline_md(joined)}</p>')
+
+    def _flush_list() -> None:
+        if not block:
+            return
+        kind, items = _parse_list_block(block)
+        if not items:
+            return
+        tag = "ol" if kind == "ol" else "ul"
+        cls = "list-decimal" if kind == "ol" else "list-disc"
+        li_html = "".join(f'<li class="text-sm text-slate-700 leading-relaxed mb-1">{it}</li>' for it in items)
+        out.append(f'<{tag} class="{cls} pl-5 mb-3">{li_html}</{tag}>')
+
+    def _flush() -> None:
+        nonlocal mode, block
+        if mode == "para":
+            _flush_para()
+        elif mode == "list":
+            _flush_list()
+        mode = None
+        block = []
+
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        stripped = line.strip()
+        if not stripped:
+            _flush()
+            continue
+        # Skip MD headers and table rows — those are handled elsewhere.
+        if stripped.startswith("#"):
+            _flush()
+            continue
+        if stripped.startswith("|"):
+            _flush()
+            continue
+        # Horizontal rule
+        if _re.fullmatch(r"-{3,}", stripped):
+            _flush()
+            continue
+        is_list = bool(_re.match(r"^\s*(\d+\.|[-*])\s+", line))
+        if is_list:
+            if mode != "list":
+                _flush()
+                mode = "list"
+            block.append(line)
+        else:
+            if mode != "para":
+                _flush()
+                mode = "para"
+            block.append(line)
+    _flush()
+    return "".join(out)
+
+
+# ---------------------------------------------------------------------------
+# Section parsers
+# ---------------------------------------------------------------------------
+
+def parse_retrieval_date(md: str) -> str:
+    m = _re.search(r"\*\*Retrieved:\*\*\s+(\d{4}-\d{2}-\d{2})", md)
+    if m:
+        return m.group(1)
+    m = _re.search(r"re-pulled\s+(\d{4}-\d{2}-\d{2})", md)
+    return m.group(1) if m else ""
+
+
+def parse_public_tagging_prose(md: str) -> str:
+    return _extract_section(md, PUBLIC_TAGGING_RE, KANBAN_RE)
+
+
+def parse_kanban_glossary(md: str) -> list[list[str]]:
+    section = _extract_section(md, KANBAN_RE, STATUS_OVERVIEW_RE)
+    return _extract_first_table_with_header(section)
+
+
+def parse_status_overview(md: str) -> tuple[list[list[str]], str]:
+    section = _extract_section(md, STATUS_OVERVIEW_RE, MARKETING_GAP_RE)
+    table = _extract_first_table_with_header(section)
+    # Everything after the table is the velocity-context prose.
+    # Find where the first table ends.
+    prose_start = section
+    # Simple split: prose is whatever follows the last "|" line.
+    lines = section.splitlines()
+    last_table_line = 0
+    for i, ln in enumerate(lines):
+        if ln.strip().startswith("|"):
+            last_table_line = i
+    prose = "\n".join(lines[last_table_line + 1:])
+    return table, prose
+
+
+def parse_marketing_gap(md: str) -> tuple[str, list[list[str]], str]:
+    section = _extract_section(md, MARKETING_GAP_RE, ANNOUNCE_XREF_RE)
+    lines = section.splitlines()
+    first_table_line = next(
+        (i for i, ln in enumerate(lines) if ln.strip().startswith("|")), len(lines)
+    )
+    last_table_line = first_table_line - 1
+    for i, ln in enumerate(lines):
+        if ln.strip().startswith("|"):
+            last_table_line = i
+    intro = "\n".join(lines[:first_table_line])
+    outro = "\n".join(lines[last_table_line + 1:])
+    table = _extract_first_table_with_header(section)
+    return intro, table, outro
+
+
+def parse_announcement_xref(md: str) -> tuple[str, list[list[str]], str]:
+    section = _extract_section(md, ANNOUNCE_XREF_RE, NOW_HEADER_RE)
+    lines = section.splitlines()
+    first_table_line = next(
+        (i for i, ln in enumerate(lines) if ln.strip().startswith("|")), len(lines)
+    )
+    last_table_line = first_table_line - 1
+    for i, ln in enumerate(lines):
+        if ln.strip().startswith("|"):
+            last_table_line = i
+    intro = "\n".join(lines[:first_table_line])
+    outro = "\n".join(lines[last_table_line + 1:])
+    table = _extract_first_table_with_header(section)
+    return intro, table, outro
+
+
+def parse_now(md: str) -> tuple[list[dict[str, Any]], str]:
     section = _extract_section(md, NOW_HEADER_RE, NEXT_HEADER_RE)
     out: list[dict[str, Any]] = []
     for row in _extract_table_rows(section):
@@ -143,22 +393,29 @@ def parse_now(md: str) -> list[dict[str, Any]]:
             "num": num,
             "url": url,
             "title": _strip_md(row[1]),
-            "repo": row[2],
-            "status": row[3],
-            "priority": row[4],
-            "size": row[5],
+            "status": row[2],
+            "priority": row[3],
+            "size": row[4],
+            "repo": row[5] if len(row) > 5 else "",
             "tags": row[6] if len(row) > 6 else "",
             "notes": "",
             "parity_overlay": _has_parity_overlay(" | ".join(row)),
         })
-    return out
+    # Prose after the table
+    lines = section.splitlines()
+    last_table_line = 0
+    for i, ln in enumerate(lines):
+        if ln.strip().startswith("|"):
+            last_table_line = i
+    prose = "\n".join(lines[last_table_line + 1:])
+    return out, prose
 
 
-def parse_next(md: str) -> list[dict[str, Any]]:
+def parse_next(md: str) -> tuple[list[dict[str, Any]], str, str]:
     section = _extract_section(md, NEXT_HEADER_RE, LATER_HEADER_RE)
     out: list[dict[str, Any]] = []
     for row in _extract_table_rows(section):
-        if len(row) < 6:
+        if len(row) < 5:
             continue
         num, url, _ = _parse_issue_cell(row[0])
         if not num:
@@ -167,14 +424,40 @@ def parse_next(md: str) -> list[dict[str, Any]]:
             "num": num,
             "url": url,
             "title": _strip_md(row[1]),
-            "repo": row[2],
-            "priority": row[3],
-            "size": row[4],
-            "tags": row[5],
-            "notes": row[6] if len(row) > 6 else "",
+            "priority": row[2],
+            "size": row[3],
+            "tags": row[4] if len(row) > 4 else "",
+            "notes": row[5] if len(row) > 5 else "",
             "parity_overlay": _has_parity_overlay(" | ".join(row)),
         })
-    return out
+    lines = section.splitlines()
+    first_table_line = next(
+        (i for i, ln in enumerate(lines) if ln.strip().startswith("|")), len(lines)
+    )
+    last_table_line = first_table_line - 1
+    for i, ln in enumerate(lines):
+        if ln.strip().startswith("|"):
+            last_table_line = i
+    intro = "\n".join(lines[:first_table_line])
+    outro = "\n".join(lines[last_table_line + 1:])
+    return out, intro, outro
+
+
+def _normalize_theme_name(raw: str) -> str:
+    """Clean a captured theme label into a palette key.
+
+    The MD skill sometimes includes a count `(7)` and a trailing italic
+    commentary like ` — *dependency risk concentrated here*`. Drop both
+    plus any leftover dash, so the cleaned name matches THEME_PALETTE keys.
+    """
+    name = raw.strip()
+    # Strip " — *...*" commentary (em-dash, en-dash, or hyphen).
+    name = _re.sub(r"\s*[—–-]\s*\*[^*]*\*\s*$", "", name).strip()
+    # Strip trailing "(…)" counts or qualifiers.
+    name = _re.sub(r"\s*\([^)]*\)\s*$", "", name).strip()
+    # Strip a stray trailing dash left behind by earlier passes.
+    name = _re.sub(r"\s*[—–-]\s*$", "", name).strip()
+    return name
 
 
 def parse_later(md: str) -> dict[str, list[dict[str, Any]]]:
@@ -182,42 +465,44 @@ def parse_later(md: str) -> dict[str, list[dict[str, Any]]]:
     section = _extract_section(md, LATER_HEADER_RE, HIDDEN_INV_RE)
     out: dict[str, list[dict[str, Any]]] = {}
 
-    theme_matches = list(THEME_HEADER_RE.finditer(section))
+    # Cut off at the Cross-cutting sub-section — its items are duplicates
+    # of topical-home entries and we don't want them rendered twice.
+    cross_cut = _re.search(r"^###\s+Cross-cutting\b", section, _re.M)
+    scope = section[: cross_cut.start()] if cross_cut else section
+
+    theme_matches = list(THEME_HEADER_RE.finditer(scope))
     for i, m in enumerate(theme_matches):
-        name = m.group(1).strip()
-        # Strip trailing parenthetical qualifiers like "(the next platform bet)"
-        # so the name matches THEME_PALETTE keys.
-        name = _re.sub(r"\s*\([^)]*\)\s*$", "", name).strip()
+        name = _normalize_theme_name(m.group(1))
         start = m.end()
         end = (
             theme_matches[i + 1].start()
             if i + 1 < len(theme_matches)
-            else len(section)
+            else len(scope)
         )
-        body = section[start:end]
+        body = scope[start:end]
         rows = _extract_table_rows(body)
         items: list[dict[str, Any]] = []
         for row in rows:
             if not row:
                 continue
-            num, url, remainder = _parse_issue_cell(row[0])
+            num, url, _ = _parse_issue_cell(row[0])
             if not num:
                 continue
             items.append({
                 "num": num,
                 "url": url,
                 "title": _strip_md(row[1]) if len(row) > 1 else "",
-                "status": row[-3] if len(row) >= 4 else "",
-                "priority": row[-2] if len(row) >= 3 else "",
-                "size": row[-1] if len(row) >= 2 else "",
+                "priority": row[2] if len(row) > 2 else "",
+                "size": row[3] if len(row) > 3 else "",
+                "status": row[4] if len(row) > 4 else "",
                 "parity_overlay": _has_parity_overlay(" | ".join(row)),
             })
         out[name] = items
     return out
 
 
-def parse_hidden_inventory(md: str) -> list[dict[str, Any]]:
-    section = _extract_section(md, HIDDEN_INV_RE, _re.compile(r"^##\s+Risks", _re.M))
+def parse_hidden_inventory(md: str) -> tuple[list[dict[str, Any]], str]:
+    section = _extract_section(md, HIDDEN_INV_RE, RISKS_RE)
     out: list[dict[str, Any]] = []
     for row in _extract_table_rows(section):
         if len(row) < 3:
@@ -229,23 +514,39 @@ def parse_hidden_inventory(md: str) -> list[dict[str, Any]]:
             "num": num,
             "url": url,
             "title": _strip_md(row[1]),
-            "shipped": row[2],
-            "note": row[3] if len(row) > 3 else "",
+            "repo": row[2] if len(row) > 2 else "",
+            "shipped": row[3] if len(row) > 3 else row[2],
+            "note": row[4] if len(row) > 4 else "",
         })
-    return out
+    # Retro-post recommendation prose after the table.
+    lines = section.splitlines()
+    last_table_line = 0
+    for i, ln in enumerate(lines):
+        if ln.strip().startswith("|"):
+            last_table_line = i
+    prose = "\n".join(lines[last_table_line + 1:])
+    return out, prose
 
 
-def parse_retrieval_date(md: str) -> str:
-    m = _re.search(r"re-pulled\s+(\d{4}-\d{2}-\d{2})", md)
-    return m.group(1) if m else ""
+def parse_risks(md: str) -> str:
+    return _extract_section(md, RISKS_RE, STRATEGIC_RE)
 
 
-def _strip_md(s: str) -> str:
-    # very light cleanup for common inline md
-    s = _re.sub(r"\*\*(.+?)\*\*", r"\1", s)
-    s = _re.sub(r"\*(.+?)\*", r"\1", s)
-    return s.strip()
+def parse_strategic(md: str) -> str:
+    return _extract_section(md, STRATEGIC_RE, CHANGES_RE)
 
+
+def parse_changes(md: str) -> str:
+    return _extract_section(md, CHANGES_RE, FOLLOWUPS_RE)
+
+
+def parse_followups(md: str) -> str:
+    return _extract_section(md, FOLLOWUPS_RE, None)
+
+
+# ---------------------------------------------------------------------------
+# Theme inference + pill / card components
+# ---------------------------------------------------------------------------
 
 def _theme_for_item(num: str, later: dict[str, list[dict[str, Any]]]) -> str | None:
     for theme, items in later.items():
@@ -327,46 +628,158 @@ def _card(item: dict[str, Any], theme: str | None, bucket_label: str) -> str:
     )
 
 
+# ---------------------------------------------------------------------------
+# KPI strip + generic table / details components
+# ---------------------------------------------------------------------------
+
+def _kpi_tile(label: str, count: str, meaning: str, color: str) -> str:
+    return (
+        '<div class="bg-white border border-slate-200 rounded-xl p-3 flex-1 min-w-[9rem]">'
+        f'<div class="text-[10px] uppercase tracking-wider font-semibold mb-1" style="color:{color}">{_html.escape(label)}</div>'
+        f'<div class="text-2xl font-semibold text-slate-900 leading-none">{_html.escape(count)}</div>'
+        f'<div class="text-xs text-slate-500 mt-1 leading-snug">{_html.escape(meaning)}</div>'
+        '</div>'
+    )
+
+
+def _status_overview_kpis(table: list[list[str]]) -> str:
+    """Render the Status Overview table as a row of KPI tiles."""
+    if not table or len(table) < 2:
+        return ""
+    color_map = {
+        "RELEASED": "#059669",
+        "NOW": "#2563eb",
+        "NEXT": "#7c3aed",
+        "BLOCKED": "#e11d48",
+        "LATER": "#475569",
+        "ARCHIVED": "#94a3b8",
+    }
+    tiles: list[str] = []
+    for row in table[1:]:
+        if len(row) < 3:
+            continue
+        label_raw = row[0].replace("**", "").strip()
+        count = row[1].replace("**", "").strip()
+        meaning = row[2].strip()
+        # Skip the total row — it's a summary line, rendered separately.
+        if label_raw.lower().startswith("in-scope total"):
+            continue
+        # Normalize label for color lookup
+        color = color_map.get(label_raw.upper(), "#334155")
+        tiles.append(_kpi_tile(label_raw, count, meaning, color))
+    return (
+        '<div class="flex flex-wrap gap-2 mb-3">'
+        + "".join(tiles)
+        + "</div>"
+    )
+
+
+def _simple_table_html(
+    header: list[str],
+    rows: list[list[str]],
+    align_first_col_left: bool = True,
+) -> str:
+    """Render a markdown table as a styled HTML table with inline-MD cells."""
+    thead = (
+        '<thead><tr class="bg-slate-50 text-slate-600">'
+        + "".join(
+            f'<th class="text-left p-2 border border-slate-200 text-xs font-semibold">{_inline_md(h)}</th>'
+            for h in header
+        )
+        + "</tr></thead>"
+    )
+    body_rows = []
+    for row in rows:
+        cells = []
+        for idx, c in enumerate(row):
+            align = "text-left" if (idx == 0 and align_first_col_left) else "text-left"
+            cells.append(
+                f'<td class="{align} align-top p-2 border border-slate-200 text-sm text-slate-700">{_inline_md(c)}</td>'
+            )
+        body_rows.append("<tr>" + "".join(cells) + "</tr>")
+    tbody = "<tbody>" + "".join(body_rows) + "</tbody>"
+    return (
+        '<div class="overflow-x-auto">'
+        '<table class="w-full border-collapse bg-white border border-slate-200 rounded-xl overflow-hidden">'
+        + thead + tbody +
+        "</table></div>"
+    )
+
+
+def _details(
+    title: str,
+    subtitle: str,
+    body_html: str,
+    open_by_default: bool = False,
+) -> str:
+    open_attr = " open" if open_by_default else ""
+    return (
+        f'<details class="bg-white border border-slate-200 rounded-xl p-4 mb-3 group"{open_attr}>'
+        '<summary class="cursor-pointer list-none flex items-center justify-between">'
+        '<div>'
+        f'<h3 class="text-sm font-semibold text-slate-800">{_html.escape(title)}</h3>'
+        + (f'<p class="text-xs text-slate-500 mt-0.5">{_html.escape(subtitle)}</p>' if subtitle else "")
+        + '</div>'
+        '<span class="text-slate-400 text-xs ml-3 group-open:rotate-180 transition-transform">▼</span>'
+        '</summary>'
+        f'<div class="mt-3">{body_html}</div>'
+        '</details>'
+    )
+
+
+# ---------------------------------------------------------------------------
+# Main render
+# ---------------------------------------------------------------------------
+
 def render(md_path: str, out_path: str) -> None:
     md = open(md_path, encoding="utf-8").read()
 
     retrieval_date = parse_retrieval_date(md)
-    now_items = parse_now(md)
-    next_items = parse_next(md)
-    later = parse_later(md)
-    hidden = parse_hidden_inventory(md)
 
-    # Determine each NOW/NEXT item's theme by cross-referencing LATER themes
-    # and by simple keyword inference for items not listed in LATER.
+    public_tagging_prose = parse_public_tagging_prose(md)
+    kanban_table = parse_kanban_glossary(md)
+    status_table, velocity_prose = parse_status_overview(md)
+    mkt_intro, mkt_table, mkt_outro = parse_marketing_gap(md)
+    ann_intro, ann_table, ann_outro = parse_announcement_xref(md)
+    now_items, now_prose = parse_now(md)
+    next_items, next_intro, next_outro = parse_next(md)
+    later = parse_later(md)
+    hidden, hidden_prose = parse_hidden_inventory(md)
+    risks_section = parse_risks(md)
+    strategic_section = parse_strategic(md)
+    changes_section = parse_changes(md)
+    followups_section = parse_followups(md)
+
+    # ----- Classify NOW/NEXT items into themes via LATER, then heuristic.
     def classify(it: dict[str, Any]) -> str | None:
-        # parity overlay items still keep their primary theme
         t = _theme_for_item(it["num"], later)
         if t:
             return t
         title = (it.get("title") or "").lower()
         if "copilot" in title or "agent" in title:
             return "Agentic / Copilot evolution"
-        if any(k in title for k in ("arabic", "rtl", "i18n", "international")):
-            return "Arabic NLP / i18n"
-        if any(k in title for k in ("rubric", "template", "exemplar")):
-            return "Content / rubric tools"
+        if any(k in title for k in ("rubric", "template", "exemplar", "revision", "learning loop")):
+            return "Teacher-in-the-loop intelligence"
         if any(k in title for k in ("lms", "canvas", "classroom", "teams", "lti")):
             return "Integrations & LMS breadth"
-        if any(k in title for k in ("eval", "sentinel", "quality", "confidence")):
+        if any(k in title for k in ("eval", "sentinel", "quality", "confidence", "baseline")):
             return "Quality & evaluation stack"
         if any(k in title for k in ("stripe", "subscription", "paid")):
             return "Monetization"
         if any(k in title for k in ("plagiarism",)):
             return "Competitive Parity"
+        if any(k in title for k in ("arabic", "rtl", "i18n", "international", "htr", "handwriting")):
+            # Arabic NLP items are part of the evaluation / enablement stack
+            # for this roadmap; bucket to Quality stack if nothing better.
+            return "Quality & evaluation stack"
         return None
 
     for lst in (now_items, next_items):
         for it in lst:
             it["_theme"] = classify(it)
 
-    # Compose the portfolio matrix: rows = themes (in palette order), cols = Now/Next/Later
+    # ----- Build the theme matrix (Theme × Now/Next/Later).
     themes_in_order = list(THEME_PALETTE.keys())
-    # also include any LATER themes not already in the palette
     for t in later.keys():
         if t not in themes_in_order:
             themes_in_order.append(t)
@@ -375,39 +788,39 @@ def render(md_path: str, out_path: str) -> None:
         t: {"now": [], "next": [], "later": []} for t in themes_in_order
     }
     for it in now_items:
-        matrix.setdefault(it["_theme"] or "Uncategorized", {"now": [], "next": [], "later": []})
-        matrix[it["_theme"] or "Uncategorized"]["now"].append(it)
+        key = it["_theme"] or "Uncategorized"
+        matrix.setdefault(key, {"now": [], "next": [], "later": []})
+        matrix[key]["now"].append(it)
     for it in next_items:
-        matrix.setdefault(it["_theme"] or "Uncategorized", {"now": [], "next": [], "later": []})
-        matrix[it["_theme"] or "Uncategorized"]["next"].append(it)
+        key = it["_theme"] or "Uncategorized"
+        matrix.setdefault(key, {"now": [], "next": [], "later": []})
+        matrix[key]["next"].append(it)
     for theme, items in later.items():
         matrix.setdefault(theme, {"now": [], "next": [], "later": []})
         matrix[theme]["later"].extend(items)
-
-    # After setdefault may have introduced new themes (from classify inference
-    # or "Uncategorized"), extend themes_in_order so they render in the matrix
-    # and swim lanes.  Keep palette themes first, then any LATER themes
-    # already appended, then inferred themes discovered during classification.
     for t in matrix.keys():
         if t not in themes_in_order:
             themes_in_order.append(t)
 
-    # Render HTML
-    parity_items = []
+    # ----- Parity callout chips
+    parity_items: list[dict[str, Any]] = []
+    seen: set[str] = set()
     for bucket_items in (now_items, next_items):
         for it in bucket_items:
-            if it.get("parity_overlay"):
+            if it.get("parity_overlay") and it["num"] not in seen:
                 parity_items.append(it)
+                seen.add(it["num"])
     for theme, items in later.items():
         for it in items:
-            if it.get("parity_overlay") or theme == "Competitive Parity":
+            if (it.get("parity_overlay") or theme == "Competitive Parity") and it["num"] not in seen:
                 parity_items.append(it)
+                seen.add(it["num"])
     parity_links = " · ".join(
         f'<a class="underline" href="{_html.escape(p["url"] or "#")}">#{p["num"]}</a>'
         for p in parity_items
     )
 
-    # legend
+    # ----- Legend
     legend_items = "".join(
         f'<div class="flex items-center gap-2">'
         f'<span class="inline-block w-3 h-3 rounded-full" style="background:{p["color"]}"></span>'
@@ -416,10 +829,12 @@ def render(md_path: str, out_path: str) -> None:
         for t, p in THEME_PALETTE.items()
     )
 
-    # portfolio matrix
+    # ----- Portfolio matrix rows
     matrix_rows = []
     for theme in themes_in_order:
         if theme not in matrix:
+            continue
+        if not any(matrix[theme].values()):
             continue
         pal = _palette_for(theme)
         cells = []
@@ -444,10 +859,12 @@ def render(md_path: str, out_path: str) -> None:
             f'</tr>'
         )
 
-    # swim lanes
+    # ----- Swim lanes
     lanes = []
     for theme in themes_in_order:
         if theme not in matrix:
+            continue
+        if not any(matrix[theme].values()):
             continue
         pal = _palette_for(theme)
         cols = []
@@ -467,19 +884,58 @@ def render(md_path: str, out_path: str) -> None:
             f'<span class="inline-block w-2.5 h-2.5 rounded-full" style="background:{pal["color"]}"></span>'
             f'<h3 class="text-sm font-semibold" style="color:{pal["text"]}">{_html.escape(theme)}</h3>'
             f'</div>'
-            f'<div class="flex gap-3">{"".join(cols)}</div>'
+            f'<div class="flex gap-3 flex-wrap">{"".join(cols)}</div>'
             f'</section>'
         )
 
-    # hidden inventory strip
+    # ----- Hidden inventory strip
     hidden_cards = "".join(
         f'<div class="rounded-lg border border-slate-200 bg-white p-2 min-w-[14rem]">'
-        f'<div class="font-mono text-xs text-slate-500">#{h["num"]} · shipped {h["shipped"]}</div>'
+        f'<div class="font-mono text-xs text-slate-500">#{h["num"]} · shipped {_html.escape(h.get("shipped",""))}</div>'
         f'<div class="text-sm text-slate-800 leading-snug">{_html.escape(h["title"])}</div>'
         f'</div>'
         for h in hidden
     )
 
+    # ----- Build section HTML blocks
+    status_kpi_html = _status_overview_kpis(status_table)
+    velocity_html = md_prose_to_html(velocity_prose)
+
+    # Marketing-gap table
+    mkt_table_html = ""
+    if mkt_table and len(mkt_table) >= 2:
+        mkt_table_html = _simple_table_html(mkt_table[0], mkt_table[1:])
+    mkt_intro_html = md_prose_to_html(mkt_intro)
+    mkt_outro_html = md_prose_to_html(mkt_outro)
+
+    # Announcement xref table
+    ann_table_html = ""
+    if ann_table and len(ann_table) >= 2:
+        ann_table_html = _simple_table_html(ann_table[0], ann_table[1:])
+    ann_intro_html = md_prose_to_html(ann_intro)
+    ann_outro_html = md_prose_to_html(ann_outro)
+
+    # NOW prose
+    now_prose_html = md_prose_to_html(now_prose)
+    # NEXT prose
+    next_intro_html = md_prose_to_html(next_intro)
+    next_outro_html = md_prose_to_html(next_outro)
+    # Hidden prose
+    hidden_prose_html = md_prose_to_html(hidden_prose)
+
+    # Risks, Strategic, Changes, Followups → collapsible details blocks.
+    risks_html = md_prose_to_html(risks_section)
+    strategic_html = md_prose_to_html(strategic_section)
+    changes_html = md_prose_to_html(changes_section)
+    followups_html = md_prose_to_html(followups_section)
+    public_tagging_html = md_prose_to_html(public_tagging_prose)
+
+    # Kanban table
+    kanban_table_html = ""
+    if kanban_table and len(kanban_table) >= 2:
+        kanban_table_html = _simple_table_html(kanban_table[0], kanban_table[1:])
+
+    # ----- Assemble the HTML document
     html_doc = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -490,6 +946,7 @@ def render(md_path: str, out_path: str) -> None:
 <style>
   body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }}
   code {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }}
+  details > summary::-webkit-details-marker {{ display: none; }}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900 p-6">
@@ -501,9 +958,17 @@ def render(md_path: str, out_path: str) -> None:
   </p>
 </header>
 
+<section class="max-w-[1440px] mx-auto mb-6">
+  <h2 class="text-sm font-semibold text-slate-700 mb-2">Status overview</h2>
+  {status_kpi_html}
+  <div class="bg-white border border-slate-200 rounded-xl p-4">
+    {velocity_html}
+  </div>
+</section>
+
 <section class="max-w-[1440px] mx-auto mb-6 bg-white border border-slate-200 rounded-xl p-4">
   <h2 class="text-sm font-semibold text-slate-700 mb-2">Legend</h2>
-  <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
     {legend_items}
   </div>
   <div class="text-[11px] text-slate-500 mt-3">
@@ -514,6 +979,7 @@ def render(md_path: str, out_path: str) -> None:
 
 <section class="max-w-[1440px] mx-auto mb-6">
   <h2 class="text-sm font-semibold text-slate-700 mb-2">Theme portfolio matrix</h2>
+  <div class="overflow-x-auto">
   <table class="w-full border-collapse bg-white border border-slate-200 rounded-xl overflow-hidden text-sm">
     <thead>
       <tr class="bg-slate-50 text-slate-600">
@@ -527,6 +993,7 @@ def render(md_path: str, out_path: str) -> None:
       {"".join(matrix_rows)}
     </tbody>
   </table>
+  </div>
 </section>
 
 <section class="max-w-[1440px] mx-auto mb-6">
@@ -534,11 +1001,65 @@ def render(md_path: str, out_path: str) -> None:
   {"".join(lanes)}
 </section>
 
-{f'''
+{f'''<section class="max-w-[1440px] mx-auto mb-6 bg-white border border-slate-200 rounded-xl p-4">
+  <h2 class="text-sm font-semibold text-slate-700 mb-2">NOW — ship-order read</h2>
+  {now_prose_html}
+</section>''' if now_prose_html else ""}
+
+{f'''<section class="max-w-[1440px] mx-auto mb-6 bg-white border border-slate-200 rounded-xl p-4">
+  <h2 class="text-sm font-semibold text-slate-700 mb-2">NEXT — Q2 realism</h2>
+  {next_intro_html}{next_outro_html}
+</section>''' if (next_intro_html or next_outro_html) else ""}
+
 <section class="max-w-[1440px] mx-auto mb-6">
+  <h2 class="text-sm font-semibold text-slate-700 mb-2">Marketing-vs-Ship Gap</h2>
+  <div class="bg-white border border-slate-200 rounded-xl p-4 mb-3">{mkt_intro_html}</div>
+  {mkt_table_html}
+  {f'<div class="bg-white border border-slate-200 rounded-xl p-4 mt-3">{mkt_outro_html}</div>' if mkt_outro_html else ""}
+</section>
+
+<section class="max-w-[1440px] mx-auto mb-6">
+  <h2 class="text-sm font-semibold text-slate-700 mb-2">Announcement Cross-Reference</h2>
+  <div class="bg-white border border-slate-200 rounded-xl p-4 mb-3">{ann_intro_html}</div>
+  {ann_table_html}
+  {f'<div class="bg-white border border-slate-200 rounded-xl p-4 mt-3">{ann_outro_html}</div>' if ann_outro_html else ""}
+</section>
+
+{f'''<section class="max-w-[1440px] mx-auto mb-6">
   <h2 class="text-sm font-semibold text-slate-700 mb-2">Hidden inventory — shipped, not announced</h2>
-  <div class="flex gap-2 overflow-x-auto pb-2">{hidden_cards}</div>
+  <div class="flex gap-2 overflow-x-auto pb-2 mb-3">{hidden_cards}</div>
+  {f'<div class="bg-white border border-slate-200 rounded-xl p-4">{hidden_prose_html}</div>' if hidden_prose_html else ""}
 </section>''' if hidden else ""}
+
+<section class="max-w-[1440px] mx-auto mb-6">
+  <h2 class="text-sm font-semibold text-slate-700 mb-2">Analysis &amp; actions</h2>
+
+  {_details("Risks & Dependencies",
+            "Where the roadmap can quietly slip.",
+            risks_html,
+            open_by_default=True) if risks_html else ""}
+
+  {_details("Strategic Call-outs",
+            "Themed reads that don't fit any one bucket.",
+            strategic_html,
+            open_by_default=True) if strategic_html else ""}
+
+  {_details("Changes vs. the board today",
+            "Concrete actions the product lead should take after reading this.",
+            changes_html) if changes_html else ""}
+
+  {_details("Kanban Status Glossary",
+            "Read this before interpreting any status column.",
+            kanban_table_html) if kanban_table_html else ""}
+
+  {_details("Public-surface tagging rules",
+            "How [ANNOUNCED] and [FEATURED] are applied throughout the roadmap.",
+            public_tagging_html) if public_tagging_html else ""}
+
+  {_details("Follow-ups I can generate on request",
+            "Derived views that can be produced from this roadmap.",
+            followups_html) if followups_html else ""}
+</section>
 
 <footer class="max-w-[1440px] mx-auto text-xs text-slate-400 mt-8">
   Regenerate with the <code>ta39-roadmap-html</code> skill. Data source: {_html.escape(md_path)}
