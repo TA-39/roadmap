@@ -116,7 +116,7 @@ references, flag it to the user and ask whether to append.
 
 ## Step 5 — Write the MD
 
-The document has 14 sections in a fixed order. Follow the structure exactly;
+The document has 15 sections in a fixed order. Follow the structure exactly;
 the HTML skill parses against these headers.
 
 ### Section list (in order)
@@ -139,36 +139,54 @@ the HTML skill parses against these headers.
 6. **Announcement Cross-Reference** — table of items with a dedicated
    community post. `[FEATURED]` applies only when the item is released
    AND named on the features page.
-7. **NOW** — active build or QA. Items whose bucket = NOW. Add a
+7. **RELEASED** — the full released inventory. One row per item whose
+   bucket = RELEASED (i.e., Status `Testing in Production` or `Done`).
+   Header must be exactly `## RELEASED` so the HTML renderer can find it.
+   Use the same table shape as NOW/NEXT so the renderer parses it
+   uniformly:
+
+   ```
+   | # | Title | Repo | Priority | Size | Status | Tags |
+   ```
+
+   The Tags column carries `[ANNOUNCED]` when the item is in the
+   Announcement Cross-Reference, `[FEATURED]` when it's on the features
+   page, and `[SILENT]` when neither applies (these are the hidden
+   inventory — they still belong in this section, with the silent tag).
+   Keep the Announcement Cross-Reference and Shipped-but-NOT-announced
+   sections too — those are analytical cuts on the same data. This
+   section is the complete, flat list.
+8. **NOW** — active build or QA. Items whose bucket = NOW. Add a
    "Ship-order read" paragraph and a note on anything recently promoted
    from NOW to RELEASED.
-8. **NEXT** — `Ready for Development` items. Include a **Q2 realism**
+9. **NEXT** — `Ready for Development` items. Include a **Q2 realism**
    column for each row (Must-start / Defer to Q3 / etc.) based on size,
    priority, and labels. Explicitly note:
    - L/XL items from a cold start won't ship in ~6 weeks
    - Items carrying the `Competitive Parity` label get a "parity play"
      flag in the Tags column (use the literal `` `Competitive Parity` label ``)
-9. **LATER** — organized by theme:
-   - Theme 1: Agentic / Copilot evolution
-   - Theme 2: Teacher-in-the-loop intelligence
-   - Theme 3: Quality & evaluation stack (flag that dependency risk is
-     concentrated here — all High priority, all Blocked or unprioritized)
-   - Theme 4: Integrations & LMS breadth
-   - Theme 5: Monetization (flag under-weighting risk)
+10. **LATER** — organized by theme:
+    - Theme 1: Agentic / Copilot evolution
+    - Theme 2: Teacher-in-the-loop intelligence
+    - Theme 3: Quality & evaluation stack (flag that dependency risk is
+      concentrated here — all High priority, all Blocked or unprioritized)
+    - Theme 4: Integrations & LMS breadth
+    - Theme 5: Monetization (flag under-weighting risk)
 
-   For any item carrying the `Competitive Parity` label that fits a topical
-   theme, annotate it with ⚔️ in the theme table and add a footnote:
-   `*⚔️ = also carries the GitHub \`Competitive Parity\` label.*`
-10. **Shipped but NOT publicly announced** — hidden inventory. Released
+    For any item carrying the `Competitive Parity` label that fits a topical
+    theme, annotate it with ⚔️ in the theme table and add a footnote:
+    `*⚔️ = also carries the GitHub \`Competitive Parity\` label.*`
+11. **Shipped but NOT publicly announced** — hidden inventory. Released
     items with no announcement and no features-page name. Recommend the
-    top 3 for retroactive posts.
-11. **Risks & Dependencies** — at least 5 numbered risks:
+    top 3 for retroactive posts. This is the same data as the `[SILENT]`
+    rows in RELEASED, surfaced here with recommendations attached.
+12. **Risks & Dependencies** — at least 5 numbered risks:
     - Public surface vs. shipped product (the marketing gap)
     - Blocked High-priority items in the quality/eval stack
     - Cross-repo dependencies (Arabic NLP spans frontend, api, graditron)
     - Missing Iteration/Sprint field population
     - Author-rule violations (non-adnanwarsi `Type=Feature` issues)
-12. **Strategic Call-outs** — lettered (a) through at least (f):
+13. **Strategic Call-outs** — lettered (a) through at least (f):
     - (a) Agentic is the right "Later" bet
     - (b) Monetization is underweighted
     - (c) Eval Harness M2/M3/M4 have no Priority set
@@ -179,9 +197,9 @@ the HTML skill parses against these headers.
       with a parity overlay. Frame as a portfolio question for
       leadership: under-investing loses enterprise RFPs, over-investing
       burns differentiation capacity.
-13. **Changes vs. the board today** — numbered action list (retag #113,
+14. **Changes vs. the board today** — numbered action list (retag #113,
     set priorities on Eval Harness items, populate Iteration fields, etc.)
-14. **Follow-ups I can generate on request** — menu of next steps
+15. **Follow-ups I can generate on request** — menu of next steps
     (exec version, sprint plan, competitive frame, refreshed xlsx tracker,
     etc.)
 
