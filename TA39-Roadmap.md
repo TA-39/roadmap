@@ -77,16 +77,16 @@ The www.ta-39.com/en/features page makes seven named claims. Five are met, one i
 
 Items with a dedicated community.ta-39.com post. `[ANNOUNCED]` is applied where a post exists; `[FEATURED]` is added only for released items also on the features page.
 
-| Issue | Title | Post | Date | Tags |
-|---|---|---|---|---|
-| [#697](https://github.com/TA-39/frontend/issues/697) | Revision-Aware Writing & Feedback Cycles | [Introducing Revision Rounds](https://community.ta-39.com/announcements/post/introducing-revision-rounds-making-student-revision-across-drafts-visible-jbYENcYH221JQqt) | 2026-04-14 | `[ANNOUNCED][FEATURED]` |
-| [#343](https://github.com/TA-39/frontend/issues/343) | Rubric UI and setup experience overhaul | [Optimize Rubrics With AI](https://community.ta-39.com/announcements/post/you-can-now-optimize-rubrics-with-ai-in-the-rubric-library-wUoDP62myFdyOId) | 2026-03-30 | `[ANNOUNCED][FEATURED]` |
-| [#344](https://github.com/TA-39/frontend/issues/344) | Feedback Template creation (Simplify) | [Build Feedback Templates More Easily](https://community.ta-39.com/announcements/post/you-can-now-build-feedback-templates-more-easily-in-ta39-toqLgjVRG53sHX8) | 2026-03-30 | `[ANNOUNCED][FEATURED]` |
-| [#440](https://github.com/TA-39/frontend/issues/440) | Assignment Exemplars Support | [Create Exemplars for Any Rubric](https://community.ta-39.com/announcements/post/you-can-now-create-exemplars-for-any-rubric----powered-by-ai-1S4jZwTapdze0XR) | 2025-05-15 | `[ANNOUNCED][FEATURED]` |
-| [#384](https://github.com/TA-39/frontend/issues/384) | Teacher CoPilot | [New TA39 Copilot](https://community.ta-39.com/announcements/post/new-ta39-copilot-transform-feedback-into-meaningful-conversations-t98LSruxg85pprV) | 2025-04-25 | `[ANNOUNCED][FEATURED]` |
-| [#385](https://github.com/TA-39/frontend/issues/385) | Student CoPilot | *same post as #384* | 2025-04-25 | `[ANNOUNCED][FEATURED]` |
-| [#366](https://github.com/TA-39/frontend/issues/366) | Context-Aware Copilot Panels | *same post as #384* | 2025-04-25 | `[ANNOUNCED][FEATURED]` |
-| [#378](https://github.com/TA-39/frontend/issues/378) | Canvas Google Doc Submissions via LTI | [Google Docs Submission Support](https://community.ta-39.com/announcements/post/update-google-docs-submission-support-now-available-sHeucGoJSdE6sWM) | 2025-01-21 | `[ANNOUNCED][FEATURED]` |
+| Issue | Title | Theme | Post | Date | Tags |
+|---|---|---|---|---|---|
+| [#697](https://github.com/TA-39/frontend/issues/697) | Revision-Aware Writing & Feedback Cycles | Teacher-in-the-loop intelligence | [Introducing Revision Rounds](https://community.ta-39.com/announcements/post/introducing-revision-rounds-making-student-revision-across-drafts-visible-jbYENcYH221JQqt) | 2026-04-14 | `[ANNOUNCED][FEATURED]` |
+| [#343](https://github.com/TA-39/frontend/issues/343) | Rubric UI and setup experience overhaul | Teacher-in-the-loop intelligence | [Optimize Rubrics With AI](https://community.ta-39.com/announcements/post/you-can-now-optimize-rubrics-with-ai-in-the-rubric-library-wUoDP62myFdyOId) | 2026-03-30 | `[ANNOUNCED][FEATURED]` |
+| [#344](https://github.com/TA-39/frontend/issues/344) | Feedback Template creation (Simplify) | Teacher-in-the-loop intelligence | [Build Feedback Templates More Easily](https://community.ta-39.com/announcements/post/you-can-now-build-feedback-templates-more-easily-in-ta39-toqLgjVRG53sHX8) | 2026-03-30 | `[ANNOUNCED][FEATURED]` |
+| [#440](https://github.com/TA-39/frontend/issues/440) | Assignment Exemplars Support | Teacher-in-the-loop intelligence | [Create Exemplars for Any Rubric](https://community.ta-39.com/announcements/post/you-can-now-create-exemplars-for-any-rubric----powered-by-ai-1S4jZwTapdze0XR) | 2025-05-15 | `[ANNOUNCED][FEATURED]` |
+| [#384](https://github.com/TA-39/frontend/issues/384) | Teacher CoPilot | Agentic / Copilot evolution | [New TA39 Copilot](https://community.ta-39.com/announcements/post/new-ta39-copilot-transform-feedback-into-meaningful-conversations-t98LSruxg85pprV) | 2025-04-25 | `[ANNOUNCED][FEATURED]` |
+| [#385](https://github.com/TA-39/frontend/issues/385) | Student CoPilot | Agentic / Copilot evolution | *same post as #384* | 2025-04-25 | `[ANNOUNCED][FEATURED]` |
+| [#366](https://github.com/TA-39/frontend/issues/366) | Context-Aware Copilot Panels | Agentic / Copilot evolution | *same post as #384* | 2025-04-25 | `[ANNOUNCED][FEATURED]` |
+| [#378](https://github.com/TA-39/frontend/issues/378) | Canvas Google Doc Submissions via LTI | Integrations & LMS breadth | [Google Docs Submission Support](https://community.ta-39.com/announcements/post/update-google-docs-submission-support-now-available-sHeucGoJSdE6sWM) | 2025-01-21 | `[ANNOUNCED][FEATURED]` |
 
 **Orphaned announcement posts** (exist on community.ta-39.com but no mapped `Type=Feature` issue):
 
@@ -100,11 +100,11 @@ Either file the backing issue or keep them off the roadmap accounting. The Revis
 
 ## NOW — active build or QA (3)
 
-| Issue | Title | Status | Priority | Size | Repo | Tags |
-|---|---|---|---|---|---|---|
-| [#6](https://github.com/TA-39/Sentinel/issues/6) | Sentinel — Baseline Evaluation Setup | Ready for Testing (Staging) | High | M | Sentinel | — |
-| [#166](https://github.com/TA-39/api/issues/166) | Arabic Mode Summary Report Generation (RTL + Arabic Template) | In progress | High | S | api | — |
-| [#596](https://github.com/TA-39/frontend/issues/596) | [Stream 3][Epic] Arabic NLP Enablement for TA39 Feedback Platform | In progress | High | XL | frontend | — |
+| Issue | Title | Theme | Status | Priority | Size | Repo | Tags |
+|---|---|---|---|---|---|---|---|
+| [#6](https://github.com/TA-39/Sentinel/issues/6) | Sentinel — Baseline Evaluation Setup | Quality & evaluation stack | Ready for Testing (Staging) | High | M | Sentinel | — |
+| [#166](https://github.com/TA-39/api/issues/166) | Arabic Mode Summary Report Generation (RTL + Arabic Template) | Arabic / Multilingual | In progress | High | S | api | — |
+| [#596](https://github.com/TA-39/frontend/issues/596) | [Stream 3][Epic] Arabic NLP Enablement for TA39 Feedback Platform | Arabic / Multilingual | In progress | High | XL | frontend | — |
 
 **Ship-order read.** Near-term ship order is #6 → #166 → #596. #6 is already in staging and is the quickest to flip to released. #166 is an S in active build — days of work, not weeks, assuming the Arabic template is stable. #596 is an XL epic and is the real Q2–Q3 story: it is the enabling platform for the Arabic market, and it will not flip on one date; expect incremental releases under observation.
 
@@ -116,12 +116,12 @@ Either file the backing issue or keep them off the roadmap accounting. The Revis
 
 These have specs but no code. All are sized or should be. The Q2-realism column is an honest call, not a target.
 
-| Issue | Title | Priority | Size | Tags | Q2 realism |
-|---|---|---|---|---|---|
-| [#99](https://github.com/TA-39/graditron/issues/99) | Arabic Handwriting Recognition (HTR) Capability | High | XL | — | Defer to Q3. XL from a cold start will not ship in 6 weeks; stitches into #596 Arabic NLP stack. |
-| [#327](https://github.com/TA-39/frontend/issues/327) | Plagiarism Detection Integration | Medium | L | ⚔️ `Competitive Parity` label | Must-start if parity is an active enterprise blocker; otherwise Defer to Q3. L from a cold start = ~Q3 ship. |
-| [#701](https://github.com/TA-39/frontend/issues/701) | Microsoft Teams LMS Integration | High | L | — | Must-start. High priority + Teams is a real enterprise LMS wedge. Plan a phased ship — LTI parity first. |
-| [#740](https://github.com/TA-39/frontend/issues/740) | Evolve Draft Revision Rounds into a "Learning Loop" System | High | L | — | Must-start. Rides the #697 launch momentum and converts released capability into sticky behavior. |
+| Issue | Title | Theme | Priority | Size | Tags | Q2 realism |
+|---|---|---|---|---|---|---|
+| [#99](https://github.com/TA-39/graditron/issues/99) | Arabic Handwriting Recognition (HTR) Capability | Arabic / Multilingual | High | XL | — | Defer to Q3. XL from a cold start will not ship in 6 weeks; stitches into #596 Arabic NLP stack. |
+| [#327](https://github.com/TA-39/frontend/issues/327) | Plagiarism Detection Integration | Competitive Parity | Medium | L | ⚔️ `Competitive Parity` label | Must-start if parity is an active enterprise blocker; otherwise Defer to Q3. L from a cold start = ~Q3 ship. |
+| [#701](https://github.com/TA-39/frontend/issues/701) | Microsoft Teams LMS Integration | Integrations & LMS breadth | High | L | — | Must-start. High priority + Teams is a real enterprise LMS wedge. Plan a phased ship — LTI parity first. |
+| [#740](https://github.com/TA-39/frontend/issues/740) | Evolve Draft Revision Rounds into a "Learning Loop" System | Teacher-in-the-loop intelligence | High | L | — | Must-start. Rides the #697 launch momentum and converts released capability into sticky behavior. |
 
 **L/XL realism.** L from a cold start lands late Q2 / early Q3. XL from a cold start lands mid–late Q3. The pipeline should not be read as "4 ships in Q2." The credible Q2 ship list is: finish #596 first-slice, complete #166, release #6 from staging, plus 1–2 L items from NEXT (#701 and #740 are the most plausible).
 
@@ -206,13 +206,13 @@ Three items carry the `Competitive Parity` label across the three themes above:
 
 Released features with no dedicated community post and no features-page mention. This is pitch ammunition the world cannot see.
 
-| Issue | Title | Repo | Status |
-|---|---|---|---|
-| [#20](https://github.com/TA-39/graditron/issues/20) | [Evaluation Harness] M1 — Foundations | graditron | In Production & Done |
-| [#188](https://github.com/TA-39/frontend/issues/188) | Update UI for New Class Analysis Report and Assignment Tabs | frontend | In Production & Done |
-| [#297](https://github.com/TA-39/frontend/issues/297) | Render Markdown Properly in Text Pane | frontend | In Production & Done |
-| [#532](https://github.com/TA-39/frontend/issues/532) | Internationalization — Multi-Language Support for Frontend UI | frontend | In Production & Done |
-| [#720](https://github.com/TA-39/frontend/issues/720) | UI Refresh — Revolt Design Implementation | frontend | In Production & Done |
+| Issue | Title | Theme | Repo | Status |
+|---|---|---|---|---|
+| [#20](https://github.com/TA-39/graditron/issues/20) | [Evaluation Harness] M1 — Foundations | Quality & evaluation stack | graditron | In Production & Done |
+| [#188](https://github.com/TA-39/frontend/issues/188) | Update UI for New Class Analysis Report and Assignment Tabs | Teacher-in-the-loop intelligence | frontend | In Production & Done |
+| [#297](https://github.com/TA-39/frontend/issues/297) | Render Markdown Properly in Text Pane | Platform & UX | frontend | In Production & Done |
+| [#532](https://github.com/TA-39/frontend/issues/532) | Internationalization — Multi-Language Support for Frontend UI | Arabic / Multilingual | frontend | In Production & Done |
+| [#720](https://github.com/TA-39/frontend/issues/720) | UI Refresh — Revolt Design Implementation | Platform & UX | frontend | In Production & Done |
 
 **Recommended retroactive posts (top 3):**
 
