@@ -177,7 +177,22 @@ Rules:
    fetched data.
 6. **Announcement Cross-Reference** — table of items with a dedicated
    community post. `[FEATURED]` applies only when the item is released
-   AND named on the features page.
+   AND named on the features page. Table shape:
+
+   ```
+   | Issue | Title | Theme | Post | Announced | Released | Tags |
+   ```
+
+   - `Announced` is the **post date** on community.ta-39.com (when the
+     announcement went up).
+   - `Released` is the **actual production date** — the GitHub issue's
+     `closed_at` (or the project board's status-change event when the
+     item entered `In Production & Done` / `Testing in Production`).
+     These can differ by days or weeks, so we carry both.
+   - The `Post` column uses a real markdown link for the canonical
+     announcement. When two released items share a single announcement
+     post, the follow-on row can carry `*same post as #N*` and the
+     HTML renderer resolves the URL from #N.
 7. **RELEASED** — the full released inventory. One row per item whose
    bucket = RELEASED (i.e., Status `Testing in Production` or `Done`).
    Header must be exactly `## RELEASED` so the HTML renderer can find it.
@@ -239,7 +254,12 @@ Rules:
 11. **Shipped but NOT publicly announced** — hidden inventory. Released
     items with no announcement and no features-page name. Recommend the
     top 3 for retroactive posts. This is the same data as the `[SILENT]`
-    rows in RELEASED, surfaced here with recommendations attached.
+    rows in RELEASED, surfaced here with recommendations attached. Table
+    shape (Released column required — source from `closed_at`):
+
+    ```
+    | Issue | Title | Theme | Repo | Released | Status |
+    ```
 12. **Risks & Dependencies** — at least 5 numbered risks:
     - Public surface vs. shipped product (the marketing gap)
     - Blocked High-priority items in the quality/eval stack
@@ -259,7 +279,30 @@ Rules:
       burns differentiation capacity.
 14. **Changes vs. the board today** — numbered action list (retag #113,
     set priorities on Eval Harness items, populate Iteration fields, etc.)
-15. **Follow-ups I can generate on request** — menu of next steps
+15. **Appendix — Feature Blurbs** — a two-column lookup table that gives
+    every feature a one-sentence human explanation. The HTML renderer
+    pulls from this section and prints the blurb under the card title so
+    someone skimming the dashboard understands what each feature actually
+    does without opening the issue. Table shape:
+
+    ```
+    | # | Blurb |
+    ```
+
+    - One row per issue, issue number in the first column as a bare
+      number (`697`) — no markdown link needed.
+    - Keep each blurb to ≤ 22 words, one sentence, plain English. Say
+      what users *get*, not how it's built. No marketing gloss. Examples:
+      "Handwritten-Arabic OCR so scanned work flows through the same
+      feedback loop as typed submissions."
+    - If a feature lacks a blurb, the HTML renderer still renders the
+      card (gracefully — no blurb line) and prints a stderr warning
+      listing the missing issue numbers so they're easy to backfill.
+    - When adding a new issue to the roadmap, **add a blurb for it in
+      the same change**. That's the contract: blurb appears with the
+      feature or the feature appears bare.
+
+16. **Follow-ups I can generate on request** — menu of next steps
     (exec version, sprint plan, competitive frame, refreshed xlsx tracker,
     etc.)
 

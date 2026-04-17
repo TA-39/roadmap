@@ -85,6 +85,14 @@ NEXT_HEADER_RE = _re.compile(r"^##\s+NEXT\b", _re.M)
 LATER_HEADER_RE = _re.compile(r"^##\s+LATER\b", _re.M)
 HIDDEN_INV_RE = _re.compile(r"^##\s+Shipped but NOT publicly announced\b", _re.M)
 RISKS_RE = _re.compile(r"^##\s+Risks", _re.M)
+# Feature Blurbs — optional appendix section in the MD. Format:
+#   | # | Blurb |
+#   |---|---|
+#   | 697 | Surfaces the arc of a student's drafts... |
+# Matched case-insensitively, and with optional "Appendix —" / "Appendix:" prefixes.
+BLURBS_HEADER_RE = _re.compile(
+    r"^##\s+(?:Appendix\s*[—–-]\s*)?Feature\s+Blurbs\b", _re.M | _re.I
+)
 
 THEME_HEADER_RE = _re.compile(r"^###\s+Theme\s+\d+\s+[—–-]\s+(.+?)\s*$", _re.M)
 
@@ -174,6 +182,39 @@ def _parse_issue_cell(cell: str) -> tuple[str | None, str | None, str]:
     if not m:
         return None, None, cell
     return m.group(1), m.group(2), cell[m.end():].strip()
+
+
+_MD_LINK_RE = _re.compile(r"\[([^\]]+)\]\((https?://[^)]+)\)")
+
+
+def _parse_post_cell(cell: str) -> tuple[str | None, str | None]:
+    """Extract (url, title) from a cell that typically holds a community
+    announcement link like `[Introducing Revision Rounds](https://…)`. When
+    the cell is a `*same post as #384*` pointer or plain prose, return
+    (None, text-without-markdown) — the caller can still show the title or
+    swallow it."""
+    if not cell:
+        return None, None
+    m = _MD_LINK_RE.search(cell)
+    if m:
+        return m.group(2), _strip_md(m.group(1))
+    text = _strip_md(cell).strip()
+    return None, text or None
+
+
+_DATE_RE = _re.compile(r"(\d{4}-\d{2}-\d{2})")
+
+
+def _normalize_date(cell: str) -> str:
+    """Return the YYYY-MM-DD substring from a cell, or "" if none found.
+
+    We accept bare dates, full ISO timestamps (strip the T…Z), and cells
+    carrying italics / markdown — the regex is resilient to all of these.
+    """
+    if not cell:
+        return ""
+    m = _DATE_RE.search(cell)
+    return m.group(1) if m else ""
 
 
 def _has_parity_overlay(cell: str) -> bool:
@@ -273,7 +314,20 @@ def parse_marketing_gap(md: str) -> list[dict[str, str]]:
 
 
 def parse_announcement_xref(md: str) -> list[dict[str, Any]]:
-    """Return the announced RELEASED items with ann/feat flags set."""
+    """Return the announced RELEASED items with ann/feat flags set.
+
+    Also captures:
+    - `ann_url` / `ann_title` from the Post column (the community.ta-39.com link)
+    - `announced_at` from the Announced (or legacy Date) column
+    - `released_at` from the Released column, when the MD carries one
+
+    The renderer surfaces these on RELEASED cards so a reader can hop to
+    the announcement post and see when the feature actually shipped.
+
+    Post cells of the form `*same post as #384*` are resolved in a second
+    pass so the shared announcement URL flows to all items it covers — the
+    ANN chip should appear on every announced card, not just the first one.
+    """
     # The section goes until NOW (or RELEASED if present).
     next_re = RELEASED_HEADER_RE if RELEASED_HEADER_RE.search(md) else NOW_HEADER_RE
     section = _extract_section(md, ANNOUNCE_XREF_RE, next_re)
@@ -281,6 +335,9 @@ def parse_announcement_xref(md: str) -> list[dict[str, Any]]:
     issue_i = _col_idx(headers, "issue", "#")
     title_i = _col_idx(headers, "title")
     theme_i = _col_idx(headers, "theme")
+    post_i = _col_idx(headers, "post", "announcement")
+    announced_i = _col_idx(headers, "announced", "date")
+    released_i = _col_idx(headers, "released", "released at", "prod")
     tags_i = _col_idx(headers, "tags")
     out: list[dict[str, Any]] = []
     for row in rows:
@@ -293,16 +350,44 @@ def parse_announcement_xref(md: str) -> list[dict[str, Any]]:
         tags_cell = _cell(row, tags_i if tags_i >= 0 else len(row) - 1)
         announced = "ANNOUNCED" in tags_cell.upper()
         featured = "FEATURED" in tags_cell.upper()
+        post_cell = _cell(row, post_i)
+        ann_url, ann_title = _parse_post_cell(post_cell)
+        # Remember the raw cell text so "same post as #384" pointers can be
+        # resolved after we've built the full list.
         out.append({
             "num": num,
             "url": url,
             "title": _strip_md(_strip_inline_links(_cell(row, title_i if title_i >= 0 else 1))),
             "theme_raw": _cell(row, theme_i),
+            "ann_url": ann_url,
+            "ann_title": ann_title,
+            "_post_cell_raw": post_cell,
+            "announced_at": _normalize_date(_cell(row, announced_i)),
+            "released_at": _normalize_date(_cell(row, released_i)),
             "bucket": "released",
             "announced": announced,
             "featured": featured,
             "parity_overlay": False,
         })
+
+    # Second pass: resolve `*same post as #N*` pointers. For each item
+    # without an ann_url, if its raw post cell references another issue
+    # number that DOES have an ann_url, copy it over.
+    by_num = {it["num"]: it for it in out}
+    for it in out:
+        if it.get("ann_url"):
+            continue
+        raw = it.get("_post_cell_raw") or ""
+        ref_match = _re.search(r"#(\d+)", raw)
+        if not ref_match:
+            continue
+        ref = by_num.get(ref_match.group(1))
+        if ref and ref.get("ann_url"):
+            it["ann_url"] = ref["ann_url"]
+            if not it.get("ann_title"):
+                it["ann_title"] = ref.get("ann_title")
+    for it in out:
+        it.pop("_post_cell_raw", None)
     return out
 
 
@@ -313,6 +398,7 @@ def parse_hidden_inventory(md: str) -> list[dict[str, Any]]:
     title_i = _col_idx(headers, "title")
     theme_i = _col_idx(headers, "theme")
     repo_i = _col_idx(headers, "repo")
+    released_i = _col_idx(headers, "released", "released at", "prod")
     status_i = _col_idx(headers, "status")
     out: list[dict[str, Any]] = []
     for row in rows:
@@ -328,6 +414,7 @@ def parse_hidden_inventory(md: str) -> list[dict[str, Any]]:
             "title": _strip_md(_cell(row, title_i if title_i >= 0 else 1)),
             "theme_raw": _cell(row, theme_i),
             "repo": _cell(row, repo_i),
+            "released_at": _normalize_date(_cell(row, released_i)),
             "status": _cell(row, status_i),
             "bucket": "released",
             "announced": False,
@@ -355,6 +442,7 @@ def parse_released_explicit(md: str) -> list[dict[str, Any]]:
     repo_i = _col_idx(headers, "repo")
     priority_i = _col_idx(headers, "priority")
     size_i = _col_idx(headers, "size")
+    released_i = _col_idx(headers, "released", "released at", "prod")
     status_i = _col_idx(headers, "status")
     tags_i = _col_idx(headers, "tags")
     out: list[dict[str, Any]] = []
@@ -376,6 +464,7 @@ def parse_released_explicit(md: str) -> list[dict[str, Any]]:
             "repo": _cell(row, repo_i),
             "priority": _cell(row, priority_i),
             "size": _cell(row, size_i),
+            "released_at": _normalize_date(_cell(row, released_i)),
             "status": _cell(row, status_i),
             "bucket": "released",
             "announced": announced,
@@ -388,15 +477,37 @@ def parse_released_explicit(md: str) -> list[dict[str, Any]]:
 def resolve_released(md: str) -> list[dict[str, Any]]:
     """Prefer an explicit `## RELEASED` section; fall back to the union
     of announcement xref + hidden inventory. Deduplicates by issue num.
+
+    When an explicit `## RELEASED` section exists, still enrich each row
+    with announcement metadata (ann_url, announced_at) and release dates
+    from the Announcement Cross-Reference and Hidden Inventory sections.
+    That way the dashboard gets ANN chips + release dates even when the
+    release section itself doesn't carry those columns.
     """
+    xref = parse_announcement_xref(md)
+    hidden = parse_hidden_inventory(md)
+    enrich: dict[str, dict[str, Any]] = {}
+    for it in xref:
+        enrich[it["num"]] = it
+    for it in hidden:
+        enrich.setdefault(it["num"], it)
+
+    def _enrich(item: dict[str, Any]) -> dict[str, Any]:
+        src = enrich.get(item.get("num") or "")
+        if not src:
+            return item
+        for key in ("ann_url", "ann_title", "announced_at", "released_at"):
+            if src.get(key) and not item.get(key):
+                item[key] = src[key]
+        return item
+
     explicit = parse_released_explicit(md)
     if explicit:
-        return explicit
+        return [_enrich(it) for it in explicit]
     merged: dict[str, dict[str, Any]] = {}
-    for it in parse_announcement_xref(md):
+    for it in xref:
         merged[it["num"]] = it
-    for it in parse_hidden_inventory(md):
-        # Don't let a hidden-inventory entry overwrite an announced one.
+    for it in hidden:
         if it["num"] not in merged:
             merged[it["num"]] = it
     return list(merged.values())
@@ -511,6 +622,54 @@ def parse_later(md: str) -> dict[str, list[dict[str, Any]]]:
                 "parity_overlay": _has_parity_overlay(" | ".join(row)),
             })
         out[name] = items
+    return out
+
+
+def parse_feature_blurbs(md: str) -> dict[str, str]:
+    """Parse the optional `## Feature Blurbs` section into {num: blurb}.
+
+    The section is a simple two-column lookup table — issue number and a
+    one-sentence human explanation of what the feature does. We keep this
+    as its own section (not a column on the feature tables) so feature
+    tables stay narrow and the blurbs have one canonical home.
+
+    The issue column accepts either a bare number (`697`), a hashed
+    number (`#697`), or a full markdown link (`[#697](…)`). Whitespace
+    and markdown emphasis are stripped from the blurb. Missing / empty
+    blurbs are silently skipped — the card renderer treats "no blurb"
+    as "render nothing on that line."
+    """
+    m = BLURBS_HEADER_RE.search(md)
+    if not m:
+        return {}
+    # Section runs to the next `## ` header (or EOF).
+    start = m.end()
+    next_h = _re.search(r"^##\s+", md[start:], _re.M)
+    section = md[start : start + next_h.start()] if next_h else md[start:]
+    headers, rows = _extract_table(section)
+    if not rows:
+        return {}
+    num_i = _col_idx(headers, "#", "issue", "num", "number")
+    blurb_i = _col_idx(headers, "blurb", "description", "summary")
+    if num_i < 0:
+        num_i = 0
+    if blurb_i < 0:
+        blurb_i = 1
+    out: dict[str, str] = {}
+    for row in rows:
+        if not row:
+            continue
+        num_cell = _cell(row, num_i)
+        blurb_cell = _cell(row, blurb_i)
+        # Accept `[#697](...)` / `#697` / `697`.
+        num_match = _re.search(r"#?(\d+)", num_cell)
+        if not num_match:
+            continue
+        num = num_match.group(1)
+        blurb = _strip_md(_strip_inline_links(blurb_cell)).strip()
+        if not blurb or blurb in ("—", "-", "—"):
+            continue
+        out[num] = blurb
     return out
 
 
@@ -768,9 +927,14 @@ def _priority_pill(priority: str) -> str:
 def _card(item: dict[str, Any], theme: str | None) -> str:
     """A clean card that keeps the information density a PM needs at a glance.
 
-    We show: theme (named, not just colored), issue number, title, priority
-    (colored dot + label), plus the public-surface badges. We drop abbreviated
-    P:/S: chips and the repo column — those are easy to click through for.
+    We show: theme (named, not just colored), issue number, title, a one-line
+    blurb, priority (colored dot + label), plus the public-surface badges.
+    RELEASED items also surface the release date and a chip-link to the
+    community announcement post when there is one.
+
+    The whole card is a link to the GitHub issue, opened in a new tab so the
+    dashboard stays visible. The announcement chip is a nested clickable
+    element that stops propagation — one card, two exits.
     """
     pal = _palette_for(theme)
     href = _html.escape(item.get("url") or "#")
@@ -792,6 +956,55 @@ def _card(item: dict[str, Any], theme: str | None) -> str:
         badges.append(_badge(*_SILENT_BADGE))
     badges_html = " ".join(badges)
 
+    # Blurb line — one-sentence human explanation of what the feature does.
+    # Rendered as muted three-line-clamped text so more of the sentence is
+    # legible at a glance without letting the card grow unbounded when a
+    # blurb is unusually long. Silently omitted when missing.
+    blurb_raw = (item.get("blurb") or "").strip()
+    blurb_html = (
+        f'<p class="text-[11px] leading-[1.35] text-slate-500 mb-2 '
+        f'line-clamp-3">{_html.escape(blurb_raw)}</p>'
+        if blurb_raw else ""
+    )
+
+    # Release meta — date + announcement link chip. Released cards only.
+    released_meta_html = ""
+    if item.get("bucket") == "released":
+        meta_items: list[str] = []
+        rel = (item.get("released_at") or "").strip()
+        if rel:
+            meta_items.append(
+                '<span class="inline-flex items-center text-[10px] text-slate-500">'
+                '<svg class="w-3 h-3 mr-0.5 opacity-60" fill="none" stroke="currentColor" '
+                'stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" '
+                'stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 '
+                '2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>'
+                f'Released {_html.escape(rel)}</span>'
+            )
+        ann_url = item.get("ann_url")
+        if ann_url:
+            # Nested clickable element — span with onclick stops the outer
+            # <a> navigation and opens the announcement in its own tab.
+            safe_ann = _html.escape(ann_url, quote=True)
+            meta_items.append(
+                '<span role="link" tabindex="0" '
+                'class="inline-flex items-center gap-0.5 text-[10px] '
+                'font-semibold rounded px-1.5 py-0.5 border cursor-pointer '
+                'hover:bg-teal-100 transition-colors" '
+                'style="color:#0f766e;background:#ccfbf1;border-color:#5eead4" '
+                f'onclick="event.preventDefault();event.stopPropagation();'
+                f'window.open(&quot;{safe_ann}&quot;,&quot;_blank&quot;,&quot;noopener&quot;);" '
+                'onkeydown="if(event.key===&quot;Enter&quot;||event.key===&quot; &quot;)'
+                f'{{event.preventDefault();event.stopPropagation();window.open(&quot;{safe_ann}&quot;,&quot;_blank&quot;);}}" '
+                'title="Open announcement post in a new tab">Announcement ↗</span>'
+            )
+        if meta_items:
+            released_meta_html = (
+                '<div class="flex flex-wrap items-center gap-1.5 mb-1.5 -mt-0.5">'
+                + "".join(meta_items)
+                + "</div>"
+            )
+
     # Bottom meta row: priority pill + optional in-flight status.
     meta_bits: list[str] = []
     p_pill = _priority_pill(item.get("priority", ""))
@@ -806,7 +1019,8 @@ def _card(item: dict[str, Any], theme: str | None) -> str:
     meta_html = " ".join(meta_bits)
 
     return (
-        '<a href="' + href + '" class="block group rounded-xl bg-white '
+        '<a href="' + href + '" target="_blank" rel="noopener noreferrer" '
+        'class="block group rounded-xl bg-white '
         'border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] '
         'hover:shadow-[0_4px_12px_rgba(15,23,42,0.10)] hover:-translate-y-0.5 '
         'transition-all duration-150 overflow-hidden" '
@@ -820,11 +1034,15 @@ def _card(item: dict[str, Any], theme: str | None) -> str:
         f'<div class="flex flex-wrap gap-0.5 justify-end">{badges_html}</div>'
         '</div>'
         # Number + title
-        '<div class="flex items-baseline gap-2 mb-2">'
+        '<div class="flex items-baseline gap-2 mb-1.5">'
         f'<span class="font-mono text-[11px] text-slate-400 tabular-nums leading-none">#{num}</span>'
         f'<span class="text-[13px] leading-snug text-slate-800 group-hover:text-slate-900 font-medium">{title}</span>'
         '</div>'
-        # Meta row
+        # Blurb (optional)
+        + blurb_html +
+        # Release date + announcement chip (released items only, optional)
+        released_meta_html +
+        # Priority row
         f'<div class="flex flex-wrap items-center gap-1.5">{meta_html}</div>'
         '</div>'
         '</a>'
@@ -927,6 +1145,26 @@ def render(md_path: str, out_path: str) -> None:
     now_items = parse_now(md)
     next_items = parse_next(md)
     later = parse_later(md)
+    blurbs = parse_feature_blurbs(md)
+
+    # Annotate every item with its blurb (if one is on file). Missing
+    # blurbs are tracked so we can warn once at the end — the goal is to
+    # make gaps visible without failing the render.
+    missing_blurbs: list[str] = []
+
+    def _attach_blurb(it: dict[str, Any]) -> None:
+        blurb = blurbs.get(it.get("num", ""))
+        if blurb:
+            it["blurb"] = blurb
+        else:
+            missing_blurbs.append(it.get("num", "?"))
+
+    for lst in (released_items, now_items, next_items):
+        for it in lst:
+            _attach_blurb(it)
+    for theme_items in later.values():
+        for it in theme_items:
+            _attach_blurb(it)
 
     # Theme assignment for every bucket — LATER already has explicit themes
     # from `### Theme N — ...` headers. RELEASED / NOW / NEXT need keyword
@@ -957,6 +1195,15 @@ def render(md_path: str, out_path: str) -> None:
         print(
             f"[ta39-roadmap-html] WARN: theme inferred for {len(inferred)} "
             f"item(s) — add a `Theme` column entry to the MD to fix: {pairs}",
+            file=_sys.stderr,
+        )
+
+    if missing_blurbs:
+        unique_missing = sorted(set(missing_blurbs), key=lambda x: int(x) if x.isdigit() else 0)
+        print(
+            f"[ta39-roadmap-html] WARN: no blurb for {len(unique_missing)} "
+            f"item(s) — add rows to the `## Feature Blurbs` section to fix: "
+            f"{', '.join('#' + n for n in unique_missing)}",
             file=_sys.stderr,
         )
 
@@ -997,6 +1244,11 @@ def render(md_path: str, out_path: str) -> None:
     )
     announced_count = sum(1 for it in released_items if it.get("announced"))
     released_total = len(released_items)
+    tracked_total = released_total + len(now_items) + len(next_items) + len(later_flat)
+    theme_total = len({
+        (it.get("_theme") or it.get("theme") or "Platform & UX")
+        for it in released_items + now_items + next_items + later_flat
+    })
 
     # Legend (theme palette + badge key)
     theme_chips = "".join(
@@ -1205,7 +1457,7 @@ def render(md_path: str, out_path: str) -> None:
         Roadmap
       </h1>
       <p class="text-base text-slate-500 mt-3 max-w-2xl tabular-nums">
-        36 tracked features across 6 themes.
+        {tracked_total} tracked features across {theme_total} themes.
         {f"Snapshot taken {retrieval_date}." if retrieval_date else ""}
         <span class="text-slate-900 font-medium">{silent_note}.</span>
       </p>
