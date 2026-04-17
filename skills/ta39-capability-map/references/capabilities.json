@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "title": "What TA39 does for you",
+  "subtitle": "A teacher uploads student work. TA39 reads it, gives feedback in the teacher's voice, and keeps the teacher in control. The flow below groups capabilities by the outcome they deliver \u2014 not by how they're built.",
+  "columns": [
+    {
+      "id": "set_up",
+      "number": "1",
+      "title": "Set up",
+      "subtitle": "Describe what 'good' looks like, once."
+    },
+    {
+      "id": "collect",
+      "number": "2",
+      "title": "Collect work",
+      "subtitle": "From wherever students already are."
+    },
+    {
+      "id": "feedback",
+      "number": "3",
+      "title": "Give feedback",
+      "subtitle": "Fast, rubric-aligned, revision-aware."
+    },
+    {
+      "id": "steer",
+      "number": "4",
+      "title": "Steer & report",
+      "subtitle": "Teacher stays in the driver's seat."
+    }
+  ],
+  "capabilities": [
+    {
+      "column": "set_up",
+      "name": "Build rubrics with AI",
+      "blurb": "Draft and refine criteria in minutes instead of hours.",
+      "issues": [343]
+    },
+    {
+      "column": "set_up",
+      "name": "Save feedback templates",
+      "blurb": "Capture how you give feedback; reuse across assignments.",
+      "issues": [344]
+    },
+    {
+      "column": "set_up",
+      "name": "Generate exemplars",
+      "blurb": "AI-made samples show what each score level looks like.",
+      "issues": [440]
+    },
+    {
+      "column": "set_up",
+      "name": "Teacher-led calibration",
+      "blurb": "Correct AI with deltas; it learns your voice without retraining.",
+      "issues": [331]
+    },
+
+    {
+      "column": "collect",
+      "name": "Canvas + Google Docs (LTI)",
+      "blurb": "Submit through the LMS workflow you already use.",
+      "issues": [378]
+    },
+    {
+      "column": "collect",
+      "name": "Canvas Discussions",
+      "blurb": "Feedback on participation, not just essays.",
+      "issues": [473]
+    },
+    {
+      "column": "collect",
+      "name": "Google Classroom re-use",
+      "blurb": "Bring in assignments you've already posted.",
+      "issues": [226]
+    },
+    {
+      "column": "collect",
+      "name": "Microsoft Teams (LTI)",
+      "blurb": "For schools standardized on Teams.",
+      "issues": [701]
+    },
+    {
+      "column": "collect",
+      "name": "Handwritten & voice",
+      "blurb": "Arabic HTR, voice transcription \u2014 same feedback loop.",
+      "issues": [99, 474]
+    },
+
+    {
+      "column": "feedback",
+      "name": "AI feedback on any submission",
+      "blurb": "Rubric-scored comments, teacher-reviewable.",
+      "status": "shipped"
+    },
+    {
+      "column": "feedback",
+      "name": "Revision rounds",
+      "blurb": "See the arc of a student's drafts, not just the final.",
+      "issues": [697]
+    },
+    {
+      "column": "feedback",
+      "name": "Teacher + Student Copilots",
+      "blurb": "Conversational help in context for both sides.",
+      "issues": [384, 385, 366]
+    },
+    {
+      "column": "feedback",
+      "name": "Arabic NLP feedback",
+      "blurb": "Native Arabic pipeline \u2014 OCR through comments.",
+      "issues": [596]
+    },
+    {
+      "column": "feedback",
+      "name": "Socratic in-the-moment",
+      "blurb": "Guiding questions while students write.",
+      "issues": [113]
+    },
+    {
+      "column": "feedback",
+      "name": "Learning loop",
+      "blurb": "Track student growth across many assignments.",
+      "issues": [740]
+    },
+
+    {
+      "column": "steer",
+      "name": "Class analytics view",
+      "blurb": "Spot patterns across a class, not one paper at a time.",
+      "issues": [188]
+    },
+    {
+      "column": "steer",
+      "name": "Multi-language UI",
+      "blurb": "Foundation for Arabic and other locales.",
+      "issues": [532]
+    },
+    {
+      "column": "steer",
+      "name": "Arabic RTL reports",
+      "blurb": "Summary reports teachers can hand to students.",
+      "issues": [166]
+    },
+    {
+      "column": "steer",
+      "name": "HITL score disputes",
+      "blurb": "Structured way for students to challenge \u2014 with teacher in loop.",
+      "issues": [328]
+    }
+  ],
+  "foundations": [
+    {
+      "name": "Internationalization",
+      "blurb": "Multi-language UI scaffolding.",
+      "issues": [532]
+    },
+    {
+      "name": "Plagiarism detection",
+      "blurb": "Integrated check for enterprise procurement.",
+      "issues": [327]
+    },
+    {
+      "name": "Self-serve billing",
+      "blurb": "Stripe for individual teachers.",
+      "issues": [374]
+    },
+    {
+      "name": "Agentic TA39",
+      "blurb": "The next era: a copilot that acts, not just answers.",
+      "issues": [547, 649]
+    }
+  ]
+}
