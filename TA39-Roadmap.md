@@ -2,7 +2,7 @@
 
 **Source:** GitHub Projects board [TA-39 Product Development (project #4)](https://github.com/orgs/TA-39/projects/4).
 **Scope:** Every non-archived item with `Type = Feature` authored by `adnanwarsi`.
-**Retrieved:** 2026-04-17 (fresh pull — 25 in-scope items, #343 Rubric UI joined after re-typing as Feature).
+**Retrieved:** 2026-04-26 (fresh pull — 26 in-scope items, +1 vs. last refresh: #3 "TA39 Onboarding & Training" newly groomed into NEXT).
 **Horizon:** Through Q3 2026.
 
 The MD is the source of truth. The HTML dashboard (`TA39-Roadmap.html`) is a projection of it. If a row is missing a theme or a blurb, the dashboard is partial — fix it here.
@@ -43,15 +43,17 @@ Keep in mind: `Ready for Development` ≠ "about to ship." It means "the team co
 |---|---|
 | RELEASED | 10 |
 | NOW | 2 |
-| NEXT | 4 |
+| NEXT | 5 |
 | BLOCKED | 0 |
 | LATER | 9 |
 | ARCHIVED (excluded) | 2 |
-| **In-scope total** | **25** |
+| **In-scope total** | **26** |
 
-**Velocity context.** Ten releases are spread across 2025-Q1 through 2026-Q2. The cadence accelerated in 2026: #343 (Rubric UI Overhaul) on 2026-03-25, #344 (Feedback Templates) on 2026-03-29, #697 (Revision Rounds) on 2026-04-12. Three public launches in under three weeks is a new pace for the team and aligns with the sharper announcement cadence on community.ta-39.com.
+**Velocity context.** Ten releases are spread across 2025-Q1 through 2026-Q2. The cadence accelerated in 2026: #343 (Rubric UI Overhaul) on 2026-03-25, #344 (Feedback Templates) on 2026-03-29, #697 (Revision Rounds) on 2026-04-12. Three public launches in under three weeks remains the recent peak — no new releases have landed since the last refresh, but #697 is still `Testing in Production` so it is still being validated live.
 
-Two active builds (#166 Arabic summaries, #596 Arabic NLP epic) concentrate risk in the Arabic / Multilingual theme. Both are in `In progress`; #596 is `XL` and is not a 6-week effort. If Arabic-market GTM has a target date, surface the dependency now.
+NEXT grew by one this week: #3 "TA39 Onboarding & Training" (`website` repo, High, XL) was groomed in. It is the first non-frontend, non-api, non-graditron NEXT item — the onboarding surface lives on the marketing site, which means front-end, content, and design all coordinate against this. As an XL cold-start, it will not ship in Q2.
+
+Two active builds (#166 Arabic summaries, #596 Arabic NLP epic) continue to concentrate risk in the Arabic / Multilingual theme. Both are still `In progress`; #596 is `XL` and is not a 6-week effort. If Arabic-market GTM has a target date, surface the dependency now.
 
 ---
 
@@ -126,7 +128,7 @@ Active build or QA. Concentrated in Arabic — this is the big market bet in fli
 | [#166](https://github.com/TA-39/api/issues/166) | Arabic Mode Summary Report Generation (RTL + Arabic Template) | Arabic / Multilingual | In progress | High | S | api | — |
 | [#596](https://github.com/TA-39/frontend/issues/596) | [Stream 3][Epic] Arabic NLP Enablement for TA39 Feedback Platform | Arabic / Multilingual | In progress | High | XL | frontend | — |
 
-**Ship-order read.** #166 is `S` — it should land weeks ahead of #596. That gives the Arabic market a shippable demo (RTL summary reports) while the NLP epic continues. #596 at `XL` is a quarter-scale investment; do not expect it to close in Q2 even if it keeps moving. Size the team's Arabic bandwidth accordingly.
+**Ship-order read.** #166 is `S` — it should land weeks ahead of #596. That gives the Arabic market a shippable demo (RTL summary reports) while the NLP epic continues. #596 at `XL` is a quarter-scale investment; do not expect it to close in Q2 even if it keeps moving. Size the team's Arabic bandwidth accordingly. Nothing was promoted from NOW to RELEASED in the last week.
 
 ---
 
@@ -136,12 +138,13 @@ Active build or QA. Concentrated in Arabic — this is the big market bet in fli
 
 | Issue | Title | Theme | Priority | Size | Tags | Q2 realism |
 |---|---|---|---|---|---|---|
+| [#3](https://github.com/TA-39/website/issues/3) | TA39 Onboarding & Training | Platform & UX | High | XL | new this week | **Defer to Q3.** XL on the `website` repo — coordination across product, design, and content. Won't ship in 6 weeks from a cold start. |
 | [#99](https://github.com/TA-39/graditron/issues/99) | Arabic Handwriting Recognition (HTR) Capability | Arabic / Multilingual | High | XL | — | **Defer to Q3.** XL cold-start, cross-repo (graditron), stacks on the #596 NLP pipeline. Not a 6-week effort. |
 | [#327](https://github.com/TA-39/frontend/issues/327) | Plagiarism Detection Integration | Competitive Parity | Medium | L | `Competitive Parity` label | **Must-start in Q2** if enterprise RFPs are a Q3 pipeline focus. L item, achievable if prioritized. |
 | [#701](https://github.com/TA-39/frontend/issues/701) | Microsoft Teams LMS Integration | Integrations & LMS breadth | High | L | — | **Must-start in Q2.** L item, unblocks Teams-standardized schools (large GCC + US enterprise segment). |
 | [#740](https://github.com/TA-39/frontend/issues/740) | Evolve Draft Revision Rounds into a "Learning Loop" System | Teacher-in-the-loop intelligence | High | L | — | **Q2 stretch / Q3 base.** Natural follow-on to #697 release. Features page already implies this exists. |
 
-**Q2 realism summary.** Two of four NEXT items (#701, #327) are plausibly shippable in Q2 given sizes and priorities. #99 and #740 should be framed as Q3 realistically — don't commit them externally this quarter.
+**Q2 realism summary.** Two of five NEXT items (#701, #327) are plausibly shippable in Q2 given sizes and priorities. #99, #740, and the new #3 should all be framed as Q3 realistically — don't commit them externally this quarter. The arrival of #3 is a useful signal: onboarding/training was previously implicit and is now a tracked workstream, but it competes with the same Q3 capacity the Arabic chain is consuming. Sequence deliberately.
 
 ---
 
@@ -208,7 +211,7 @@ Two silent releases on a base of ten is a low ratio — the team is mostly annou
 2. **Arabic theme dependency chain.** #166 → #596 → #99 is a single chain of dependencies spread across three repos (api, frontend, graditron). If any link slows, the Arabic market launch slips. There is no in-flight Arabic work *outside* this chain — no redundancy.
 3. **Monetization under-investment.** One `Low` priority backlog item (#374) is the entire self-serve revenue story. This is a portfolio-level gap, not an issue-level one.
 4. **Missing Iteration/Sprint field population.** None of the in-scope items have an Iteration populated. This means sprint commitments live outside the board, and the board cannot serve as a sprint-planning artifact without fixing this.
-5. **Cross-repo coordination is under-managed.** #596 (frontend) has implicit dependencies on #166 (api) and #99 (graditron). No explicit dependency link on the board. First slip will surface this.
+5. **Cross-repo coordination is under-managed.** #596 (frontend) has implicit dependencies on #166 (api) and #99 (graditron). Now #3 adds the `website` repo into the active mix. No explicit dependency links on the board. First slip will surface this.
 6. **Quality & eval stack has aged out of the active roadmap.** The previous roadmap carried Sentinel/Eval Harness items; none are in-scope today. Either they're archived (in which case eval is running on vibes) or they belong on this board. Clarify.
 
 ---
@@ -240,16 +243,20 @@ Four items carry the `Competitive Parity` label:
 
 Three of the four are `Medium` or `Low`. Under-investing loses enterprise RFPs (plagiarism, disputes). Over-investing burns differentiation capacity. Leadership question: is parity a Q3 priority or a 2026-H2 priority? Right now the label is applied but the priorities don't reflect an answer.
 
+**(g) Onboarding is now an explicit workstream.**
+#3 is a High-priority XL on the `website` repo. The fact that it's now tracked means leadership can plan for it; the fact that it's XL means it competes with Arabic, integrations, and parity for the same Q3 slot. Decide where it sequences before the team does so by default.
+
 ---
 
 ## Changes vs. the board today
 
 1. **Populate Iteration fields** on every NOW and NEXT item so the board becomes a sprint artifact.
-2. **Link cross-repo dependencies** between #166 / #596 / #99 explicitly so a slip on one surfaces on the others.
+2. **Link cross-repo dependencies** between #166 / #596 / #99 explicitly so a slip on one surfaces on the others. Add #3 to the cross-repo list now that `website` is in active scope.
 3. **Reprioritize or retire #374** — force a decision on self-serve monetization.
 4. **Set a Priority on #327** — Medium today, but if enterprise RFPs are the Q3 target, it should be High.
 5. **File or close the orphan announcement posts** (Folders, Rubric Converter, Trusted Apps Pledge) — either they need feature issues or the posts should be archived from the announcements reference.
 6. **Clarify the quality/eval stack.** If Sentinel / Eval Harness work still exists, add it back to project #4. If not, add a note so future roadmap reads don't ask.
+7. **Size the Q3 slate explicitly.** With #3, #99, #740 all sized XL/L and competing with Arabic-chain follow-on, the Q3 commitment list cannot be more than two of these without explicit capacity carve-out.
 
 ---
 
@@ -259,6 +266,7 @@ One-sentence human explanations of what each feature does. These are rendered un
 
 | # | Blurb |
 |---|---|
+| 3 | Guided onboarding and training surface so new schools can self-serve through setup without a CSM hand-hold. |
 | 99 | Handwritten-Arabic OCR so scanned handwritten work flows through the same feedback loop as typed submissions. |
 | 113 | Socratic feedback during writing — TA39 asks guiding questions instead of grading completed work. |
 | 166 | RTL summary reports in Arabic — the first real Arabic-market output teachers can hand to students. |
@@ -292,5 +300,5 @@ One-sentence human explanations of what each feature does. These are rendered un
 - **Exec version** — 1-page condensed roadmap for board/investors with bucket counts, marquee releases, and risks only.
 - **Sprint plan** — honest 2-week cut from NOW + top NEXT items with capacity and carryover accounted for.
 - **Competitive frame** — call-out (f) expanded into a battle-card / RFP-readiness view.
-- **Refreshed xlsx tracker** — the 25-item list with bucket, status, priority, size, labels, and announcement-linkage columns.
+- **Refreshed xlsx tracker** — the 26-item list with bucket, status, priority, size, labels, and announcement-linkage columns.
 - **Retroactive-announcement drafts** — community posts for #532 and #188 in TA39 voice.
