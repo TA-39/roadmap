@@ -1,306 +1,334 @@
 # TA39 Product Roadmap
 
-**Source:** GitHub Projects board [TA-39 Product Development (project #4)](https://github.com/orgs/TA-39/projects/4).
-**Scope:** Every non-archived item with `Type = Feature` authored by `adnanwarsi`.
-**Retrieved:** 2026-05-10 (fresh pull — 26 in-scope items, unchanged total vs. last refresh; #3 "TA39 Onboarding & Training" promoted from NEXT → NOW).
-**Horizon:** Through Q3 2026.
+**Source of truth:** GitHub Projects board [TA-39 Product Development (#4)](https://github.com/orgs/TA-39/projects/4)
+**Scope:** 26 in-scope `Type=Feature` items (author rule: `Type=Feature` is reserved for the product lead `adnanwarsi`; exceptions flagged).
+**Retrieved:** 2026-07-10 (live GraphQL pull via `fetch_board.py`).
+**Horizon:** Released inventory → Now (in build/QA) → Next (ready, unstarted) → Later (backlog, theme-organized).
 
-The MD is the source of truth. The HTML dashboard (`TA39-Roadmap.html`) is a projection of it. If a row is missing a theme or a blurb, the dashboard is partial — fix it here.
+Bucket counts this pull: **RELEASED 11 · NOW 2 · NEXT 5 · BLOCKED 0 · LATER 8** (2 archived, excluded).
 
 ---
 
-## Public-surface tagging
+## Public-surface tagging rules
 
-- `[ANNOUNCED]` — there is a dedicated post on community.ta-39.com.
-- `[FEATURED]` — the item is **released** AND named on www.ta-39.com/en/features. Pipeline items never carry `[FEATURED]`; that would be making a claim before a commitment.
-- `[SILENT]` — released but neither announced nor featured. Hidden inventory.
+Two tags mark work that **users have already been told about** — they signal exposure, not internal status.
 
-Tags signal "what users have been told about." They are not a quality signal; they are a communications signal.
+- **`[ANNOUNCED]`** — the item has a dedicated post on community.ta-39.com (see Announcement Cross-Reference). Applies regardless of ship state.
+- **`[FEATURED]`** — the item is **released** (`Testing in Production` or `In Production & Done`) **AND** named on [www.ta-39.com/en/features](https://www.ta-39.com/en/features). Pipeline items never carry `[FEATURED]` even when the features page names them — that is a commitment, not a claim.
+- **`[SILENT]`** — released but neither announced nor on the features page. This is the hidden inventory (see Section 11).
 
 ---
 
 ## Kanban Status Glossary
 
-The status names on the board are not self-evident to a reader. Wire this into any stakeholder read.
+The board's status names do not map to intuition. Read this before reading the tables — in particular, `Ready for Development` means **unstarted**, and `Testing in Production` / `In Production & Done` mean **released**.
 
-| Status | Meaning | Position in flow |
-|---|---|---|
-| Backlog | Unprioritized, no commitment. | Later |
-| Ready for Development | Groomed. Unstarted. Committed for the next open slot. | Next |
-| In progress | Code is being written. | Now |
-| In Review | PR open / code review. | Now |
-| Testing in Production | Behind a flag, being validated live. **Treated as released.** | Released |
-| In Production & Done | Shipped, flag removed. | Released |
-| Archive | Out of scope. | Excluded |
+| Status | Meaning | Position in flow | Bucket |
+|---|---|---|---|
+| Backlog | Parked; not scheduled | Pre-flow | LATER |
+| Blocked / Information Needed | Stalled awaiting a decision or input | Pre-flow | BLOCKED |
+| Ready for Development | Groomed but **not started** | Start of flow | NEXT |
+| In progress | Actively being built | Mid-flow | NOW |
+| Development Complete | Code done, pre-QA | Mid-flow | NOW |
+| Ready for Testing (Staging) | Queued for staging QA | Mid-flow | NOW |
+| Testing in Staging | In staging QA | Mid-flow | NOW |
+| Testing Pre-Production | Pre-prod validation | Late-flow | NOW |
+| Testing Result Discussion | Reviewing QA outcomes | Late-flow | NOW |
+| Testing in Production | **Released**, validating live | End of flow | RELEASED |
+| In Production & Done | **Released**, closed | End of flow | RELEASED |
+| Archive | Out of scope | — | ARCHIVED |
 
-Keep in mind: `Ready for Development` ≠ "about to ship." It means "the team could pick this up next." Readers mis-hear this constantly.
+> **Reader trap:** stakeholders routinely misread `Ready for Development` as "about to ship." It is the opposite end of the pipeline from shipped. Every NEXT item below is a cold start.
 
 ---
 
 ## Status Overview
 
-| Bucket | Count |
-|---|---|
-| RELEASED | 10 |
-| NOW | 3 |
-| NEXT | 4 |
-| BLOCKED | 0 |
-| LATER | 9 |
-| ARCHIVED (excluded) | 2 |
-| **In-scope total** | **26** |
+| Bucket | Count | What it contains |
+|---|---|---|
+| RELEASED | 11 | Live in production. |
+| NOW | 2 | Active build/QA. |
+| NEXT | 5 | Groomed, unstarted (`Ready for Development`). |
+| BLOCKED | 0 | Nothing formally blocked this pull. |
+| LATER | 8 | Backlog, organized by theme below. |
+| **In-scope total** | **26** | (+2 archived, excluded.) |
 
-**Velocity context.** Ten releases are spread across 2025-Q1 through 2026-Q2. The 2026 cadence remains the recent peak: #343 (Rubric UI Overhaul) on 2026-03-25, #344 (Feedback Templates) on 2026-03-29, #697 (Revision Rounds) on 2026-04-12. No new releases landed in the last two weeks; #697 is still `Testing in Production` so it is still being validated live but is publicly launched.
+### Theme portfolio scorecard
 
-The board shift this refresh is on the **active-work front**: #3 "TA39 Onboarding & Training" moved from NEXT → NOW. That brings the active build slate from two items to three and means three of the highest-impact workstreams (Arabic NLP epic, Arabic summary reports, and the onboarding/training site) are all in flight simultaneously across three different repos (frontend, api, website). NOW is now the busiest it has been this year.
+Each in-scope item carries exactly one theme (strongest topical home). ⚔️ = also carries the GitHub `Competitive Parity` label but sits under a topical theme.
 
-#3 is High-priority XL on the `website` repo — work has begun, but XL means it will not close in the remaining Q2 window even with momentum. Treat it as a Q3 release that started early, not a Q2 commitment. The other two active builds (#166 Arabic summaries `S` on api, #596 Arabic NLP epic `XL` on frontend) are unchanged in status.
+| Theme | Released | Now | Next | Later | Total |
+|---|---|---|---|---|---|
+| Agentic / Copilot evolution | 3 | 0 | 1 | 1 | 5 |
+| Teacher-in-the-loop intelligence | 1 | 0 | 1 | 3 | 5 |
+| Quality & evaluation stack | 1 | 0 | 0 | 0 | 1 |
+| Arabic / Multilingual | 2 | 1 | 1 | 0 | 4 |
+| Integrations & LMS breadth | 1 | 0 | 1 | 2 | 4 |
+| Monetization | 0 | 0 | 0 | 1 | 1 |
+| Competitive Parity | 0 | 0 | 1 | 0 | 1 |
+| Platform & UX | 3 | 1 | 0 | 1 | 5 |
+
+### Velocity context
+
+Released dates cluster in two waves. The **Copilot wave** (Apr–Aug 2025: #384, #385, #366, #378, #440, #532, #188) established the assistant surface and i18n plumbing. The **authoring/revision wave** (Mar–Apr 2026: #343, #344, #697) rebuilt rubric, template, and revision workflows. Most recent: **#166 Arabic Mode Summary Report closed today (2026-07-10)** — freshly promoted from build to RELEASED and not yet announced.
+
+Throughput is real but lumpy — the pipeline is front-loaded with released Copilot/authoring work and thin in NOW (only 2 items). The NEXT queue is heavy on L/XL cold starts, so near-term ship velocity depends entirely on when those get pulled into build.
 
 ---
 
 ## Marketing-vs-Ship Gap
 
-What the public page claims, against what has actually shipped. This is the RFP-readiness view.
+One row per features-page claim. Reality sourced from the live board; risk rated per the reference rubric.
 
-| Claim (on www.ta-39.com/en/features) | Anchor issue(s) | Reality today | Risk |
+| Features-page claim | Anchor issue(s) & status | Reality | Risk |
 |---|---|---|---|
-| Revision Rounds | [#697](https://github.com/TA-39/frontend/issues/697), [#740](https://github.com/TA-39/frontend/issues/740) | #697 `Testing in Production` (live as of 2026-04-12 and publicly launched). #740 "Learning Loop" evolution is `Ready for Development` — unstarted. | **Low** on the core claim; **Medium** if prospects expect the longitudinal loop. |
-| Handwritten Work Support | [#99](https://github.com/TA-39/graditron/issues/99) (Arabic HTR), plus baseline OCR | Arabic HTR is `Ready for Development` — unstarted. Baseline English OCR ships today but the page wording is ambiguous. | **Medium** — needs a 5-minute copy audit with marketing each run. |
-| Canvas / Google Classroom breadth | [#378](https://github.com/TA-39/frontend/issues/378), [#473](https://github.com/TA-39/frontend/issues/473), [#226](https://github.com/TA-39/frontend/issues/226) | LTI Google Doc submission shipped 2025-05-03. Canvas Discussions (#473) and GC re-use (#226) both Backlog. | **Medium** — the page implies parity, reality is partial. |
-| Optimize Rubrics With AI | [#343](https://github.com/TA-39/frontend/issues/343) | Shipped 2026-03-25 & announced 2026-03-30. Met. | **Low** |
-| Feedback Templates | [#344](https://github.com/TA-39/frontend/issues/344) | Shipped 2026-03-29. Met. | **Low** |
-| Assignment Exemplars | [#440](https://github.com/TA-39/frontend/issues/440) | Shipped 2025-05-15. Met. | **Low** |
-| Teacher / Student / Context-Aware Copilot | [#384](https://github.com/TA-39/frontend/issues/384), [#385](https://github.com/TA-39/frontend/issues/385), [#366](https://github.com/TA-39/frontend/issues/366) | Shipped. Met. Next evolution is agentic (#547, #649) — both `Later`. | **Low** on current claim. |
+| **Revision Rounds** | [#697](https://github.com/TA-39/frontend/issues/697) *In Production & Done*; follow-on [#740](https://github.com/TA-39/frontend/issues/740) *Ready for Development* | Core claim is **met** — revision cycles are live. #740 ("Learning Loop") is a pipelined enhancement, not a gap. | **Low** |
+| **Handwritten Work Support** | [#99](https://github.com/TA-39/graditron/issues/99) Arabic HTR — *Ready for Development* (unstarted) | Arabic HTR is **not shipped**. Page may lean on earlier baseline OCR; if it implies Arabic handwriting today, it overstates. Needs a 5-minute audit with marketing. | **High** |
+| **Canvas / Google Classroom breadth** | [#378](https://github.com/TA-39/frontend/issues/378) LTI *Done*; [#473](https://github.com/TA-39/frontend/issues/473) Canvas Discussions *Backlog*; [#226](https://github.com/TA-39/frontend/issues/226) GC re-use *Backlog* | **Partial.** Core Canvas LTI submission is live; Discussions-as-source and Google Classroom re-use are backlog. | **Medium** |
+| **Optimize Rubrics With AI** | [#343](https://github.com/TA-39/frontend/issues/343) *In Production & Done* | Shipped. Met. | **Low** |
+| **Feedback Templates** | [#344](https://github.com/TA-39/frontend/issues/344) *In Production & Done* | Shipped. Met. | **Low** |
+| **Assignment Exemplars** | [#440](https://github.com/TA-39/frontend/issues/440) *In Production & Done* | Shipped. Met. | **Low** |
+| **Teacher / Student / Context-Aware Copilot** | [#384](https://github.com/TA-39/frontend/issues/384), [#385](https://github.com/TA-39/frontend/issues/385), [#366](https://github.com/TA-39/frontend/issues/366) — all *Done* | Shipped. Met. Next evolution is agentic (#547, #649) — Later. | **Low** |
 
-**Tag application note.** `[FEATURED]` is reserved for released items that also appear on the features page. Pipeline items never earn `[FEATURED]`, even if marketing has pre-named them. That is a commitment, not a claim.
+**Tag application note:** `[FEATURED]` is reserved for **released** items on the features page. Handwritten Work Support (#99) is on the page but unshipped — it carries no `[FEATURED]` tag and must not, because the page is making a commitment there, not a claim about live capability.
 
 ---
 
 ## Announcement Cross-Reference
 
-Every released item that has a dedicated community post. Two of the ten released items are `[SILENT]` and appear in the hidden-inventory section below.
+Items with a dedicated community.ta-39.com post. `Announced` = post date. `Released` = production date (`closed_at` on the GitHub issue). These differ — we carry both.
 
 | Issue | Title | Theme | Post | Announced | Released | Tags |
 |---|---|---|---|---|---|---|
-| [#697](https://github.com/TA-39/frontend/issues/697) | Revision-Aware Writing & Feedback Cycles | Teacher-in-the-loop intelligence | [Introducing Revision Rounds](https://community.ta-39.com/announcements/post/introducing-revision-rounds-making-student-revision-across-drafts-visible-jbYENcYH221JQqt) | 2026-04-14 | 2026-04-12 | [ANNOUNCED] [FEATURED] |
-| [#344](https://github.com/TA-39/frontend/issues/344) | Feedback Template creation (Simplify) | Teacher-in-the-loop intelligence | [Build Feedback Templates More Easily](https://community.ta-39.com/announcements/post/you-can-now-build-feedback-templates-more-easily-in-ta39-toqLgjVRG53sHX8) | 2026-03-30 | 2026-03-29 | [ANNOUNCED] [FEATURED] |
-| [#343](https://github.com/TA-39/frontend/issues/343) | Rubric UI and setup experience overhaul | Teacher-in-the-loop intelligence | [Optimize Rubrics With AI](https://community.ta-39.com/announcements/post/you-can-now-optimize-rubrics-with-ai-in-the-rubric-library-wUoDP62myFdyOId) | 2026-03-30 | 2026-03-25 | [ANNOUNCED] [FEATURED] |
-| [#440](https://github.com/TA-39/frontend/issues/440) | Assignment Exemplars | Quality & evaluation stack | [Create Exemplars for Any Rubric](https://community.ta-39.com/announcements/post/you-can-now-create-exemplars-for-any-rubric----powered-by-ai-1S4jZwTapdze0XR) | 2025-05-15 | 2025-05-15 | [ANNOUNCED] [FEATURED] |
-| [#384](https://github.com/TA-39/frontend/issues/384) | Teacher CoPilot | Agentic / Copilot evolution | [New TA39 Copilot](https://community.ta-39.com/announcements/post/new-ta39-copilot-transform-feedback-into-meaningful-conversations-t98LSruxg85pprV) | 2025-04-25 | 2025-04-23 | [ANNOUNCED] [FEATURED] |
-| [#385](https://github.com/TA-39/frontend/issues/385) | Student CoPilot | Agentic / Copilot evolution | *same post as #384* | 2025-04-25 | 2025-04-24 | [ANNOUNCED] [FEATURED] |
-| [#366](https://github.com/TA-39/frontend/issues/366) | Context-Aware Copilot Panels | Agentic / Copilot evolution | *same post as #384* | 2025-04-25 | 2025-08-23 | [ANNOUNCED] [FEATURED] |
-| [#378](https://github.com/TA-39/frontend/issues/378) | Canvas Google Doc Submissions via LTI | Integrations & LMS breadth | [Google Docs Submission Support](https://community.ta-39.com/announcements/post/update-google-docs-submission-support-now-available-sHeucGoJSdE6sWM) | 2025-01-21 | 2025-05-03 | [ANNOUNCED] [FEATURED] |
+| [#697](https://github.com/TA-39/frontend/issues/697) | Revision-Aware Writing & Feedback Cycles | Teacher-in-the-loop intelligence | [Introducing Revision Rounds](https://community.ta-39.com/announcements/post/introducing-revision-rounds-making-student-revision-across-drafts-visible-jbYENcYH221JQqt) | 2026-04-14 | 2026-04-12 | `[ANNOUNCED]` `[FEATURED]` |
+| [#343](https://github.com/TA-39/frontend/issues/343) | Rubric UI and setup experience overhaul | Platform & UX | [Optimize Rubrics With AI](https://community.ta-39.com/announcements/post/you-can-now-optimize-rubrics-with-ai-in-the-rubric-library-wUoDP62myFdyOId) | 2026-03-30 | 2026-03-25 | `[ANNOUNCED]` `[FEATURED]` |
+| [#344](https://github.com/TA-39/frontend/issues/344) | Feedback Template creation (Simplify) | Platform & UX | [Build Feedback Templates More Easily](https://community.ta-39.com/announcements/post/you-can-now-build-feedback-templates-more-easily-in-ta39-toqLgjVRG53sHX8) | 2026-03-30 | 2026-03-29 | `[ANNOUNCED]` `[FEATURED]` |
+| [#440](https://github.com/TA-39/frontend/issues/440) | Assignment Exemplars Support | Quality & evaluation stack | [Create Exemplars for Any Rubric](https://community.ta-39.com/announcements/post/you-can-now-create-exemplars-for-any-rubric----powered-by-ai-1S4jZwTapdze0XR) | 2025-05-15 | 2025-05-15 | `[ANNOUNCED]` `[FEATURED]` |
+| [#384](https://github.com/TA-39/frontend/issues/384) | Teacher CoPilot | Agentic / Copilot evolution | [New TA39 Copilot](https://community.ta-39.com/announcements/post/new-ta39-copilot-transform-feedback-into-meaningful-conversations-t98LSruxg85pprV) | 2025-04-25 | 2025-04-23 | `[ANNOUNCED]` `[FEATURED]` |
+| [#385](https://github.com/TA-39/frontend/issues/385) | Student CoPilot | Agentic / Copilot evolution | *same post as #384* | 2025-04-25 | 2025-04-24 | `[ANNOUNCED]` `[FEATURED]` |
+| [#366](https://github.com/TA-39/frontend/issues/366) | Context-Aware Copilot Panels | Agentic / Copilot evolution | *same post as #384* | 2025-04-25 | 2025-08-23 | `[ANNOUNCED]` `[FEATURED]` |
+| [#378](https://github.com/TA-39/frontend/issues/378) | Canvas Google Doc Submissions via LTI | Integrations & LMS breadth | [Google Docs Submission Support](https://community.ta-39.com/announcements/post/update-google-docs-submission-support-now-available-sHeucGoJSdE6sWM) | 2025-01-21 | 2025-05-03 | `[ANNOUNCED]` `[FEATURED]` |
 
-**Note — Announced vs. Released.** These are often the same week, but not always. #366 was released months after its original post because the feature shipped incrementally. Carry both columns honestly so the team can see where we pre-announced, where we retroactively announced, and where shipping lagged.
-
-**Orphaned announcement posts (no live `Type=Feature` issue).** On each refresh these should be either filed as issues or consciously ignored:
-
-- [Organizing Assignments: Folders in TA39](https://community.ta-39.com/announcements/post/organizing-assignments-folders-in-ta39-5d8F8faYPAXjAQv) — no anchor feature issue.
-- Rubric Converter Utility post.
-- Trusted Apps Pledge post.
+> **Note on #366:** announced 2025-04-25 as part of the Copilot post but not closed in production until 2025-08-23 — a ~4-month announce-to-release gap. The other Copilot items (#384/#385) shipped within days of the post. Worth understanding why #366 lagged before we repeat the pattern.
+>
+> **Orphaned posts to resolve** (posts live, no in-scope `Type=Feature` issue): *Organizing Assignments: Folders in TA39*, *Rubric Converter Utility*, *Trusted Apps Pledge*. Either file issues or leave them off the roadmap deliberately. The Revision Rounds post also covered `#768 CR8`, which is archived (out of scope).
 
 ---
 
 ## RELEASED
 
-All 10 released items. `Testing in Production` and `In Production & Done` both count — the flag distinction doesn't matter to a reader; both are live.
+Full released inventory (bucket = RELEASED). `[SILENT]` rows are the hidden inventory surfaced in Section 11.
 
 | # | Title | Theme | Repo | Priority | Size | Status | Tags |
 |---|---|---|---|---|---|---|---|
-| [#697](https://github.com/TA-39/frontend/issues/697) | Revision-Aware Writing & Feedback Cycles | Teacher-in-the-loop intelligence | frontend | High | L | Testing in Production | [ANNOUNCED] [FEATURED] |
-| [#344](https://github.com/TA-39/frontend/issues/344) | Feedback Template creation (Simplify) | Teacher-in-the-loop intelligence | frontend | High | L | In Production & Done | [ANNOUNCED] [FEATURED] |
-| [#343](https://github.com/TA-39/frontend/issues/343) | Rubric UI and setup experience overhaul | Teacher-in-the-loop intelligence | frontend | High | L | In Production & Done | [ANNOUNCED] [FEATURED] |
-| [#440](https://github.com/TA-39/frontend/issues/440) | Assignment Exemplars Support | Quality & evaluation stack | frontend | High | L | In Production & Done | [ANNOUNCED] [FEATURED] |
-| [#384](https://github.com/TA-39/frontend/issues/384) | Teacher CoPilot | Agentic / Copilot evolution | frontend | High | — | In Production & Done | [ANNOUNCED] [FEATURED] |
-| [#385](https://github.com/TA-39/frontend/issues/385) | Student CoPilot | Agentic / Copilot evolution | frontend | High | — | In Production & Done | [ANNOUNCED] [FEATURED] |
-| [#366](https://github.com/TA-39/frontend/issues/366) | Context-Aware Copilot Panels | Agentic / Copilot evolution | frontend | Critical | M | In Production & Done | [ANNOUNCED] [FEATURED] |
-| [#378](https://github.com/TA-39/frontend/issues/378) | Canvas Google Doc Submissions via LTI | Integrations & LMS breadth | frontend | High | M | In Production & Done | [ANNOUNCED] [FEATURED] |
-| [#188](https://github.com/TA-39/frontend/issues/188) | Update UI for New Class Analysis Report & Assignment Tabs | Platform & UX | frontend | High | S | In Production & Done | [SILENT] |
-| [#532](https://github.com/TA-39/frontend/issues/532) | Internationalization — Multi Language Support for Frontend UI | Arabic / Multilingual | frontend | High | L | In Production & Done | [SILENT] |
+| [#166](https://github.com/TA-39/api/issues/166) | Arabic Mode Summary Report Generation (RTL + Arabic Template) | Arabic / Multilingual | api | High | M | In Production & Done | `[SILENT]` |
+| [#188](https://github.com/TA-39/frontend/issues/188) | Update UI for New Class Analysis Report and Assignment Tabs | Platform & UX | frontend | High | S | In Production & Done | `[SILENT]` |
+| [#343](https://github.com/TA-39/frontend/issues/343) | Rubric UI and setup experience overhaul | Platform & UX | frontend | High | L | In Production & Done | `[ANNOUNCED]` `[FEATURED]` |
+| [#344](https://github.com/TA-39/frontend/issues/344) | Feedback Template creation (Simplify) | Platform & UX | frontend | High | L | In Production & Done | `[ANNOUNCED]` `[FEATURED]` |
+| [#366](https://github.com/TA-39/frontend/issues/366) | Context-Aware Copilot Panels for Students and Teachers | Agentic / Copilot evolution | frontend | Critical | M | In Production & Done | `[ANNOUNCED]` `[FEATURED]` |
+| [#378](https://github.com/TA-39/frontend/issues/378) | Canvas Google Doc Submissions via LTI | Integrations & LMS breadth | frontend | High | M | In Production & Done | `[ANNOUNCED]` `[FEATURED]` |
+| [#384](https://github.com/TA-39/frontend/issues/384) | Teacher CoPilot | Agentic / Copilot evolution | frontend | High | — | In Production & Done | `[ANNOUNCED]` `[FEATURED]` |
+| [#385](https://github.com/TA-39/frontend/issues/385) | Student CoPilot | Agentic / Copilot evolution | frontend | High | — | In Production & Done | `[ANNOUNCED]` `[FEATURED]` |
+| [#440](https://github.com/TA-39/frontend/issues/440) | Assignment Exemplars Support — generate, use, fine-tune | Quality & evaluation stack | frontend | High | L | In Production & Done | `[ANNOUNCED]` `[FEATURED]` |
+| [#532](https://github.com/TA-39/frontend/issues/532) | Internationalization — Multi-Language Support for Frontend UI | Arabic / Multilingual | frontend | High | L | In Production & Done | `[SILENT]` |
+| [#697](https://github.com/TA-39/frontend/issues/697) | Revision-Aware Writing & Feedback Cycles (Teacher-Controlled Drafts) | Teacher-in-the-loop intelligence | frontend | High | L | In Production & Done | `[ANNOUNCED]` `[FEATURED]` |
+
+**Shipped-but-NOT-announced (silent):** #166, #188, #532 — see Section 11 for retroactive-post recommendations.
 
 ---
 
 ## NOW
 
-Active build or QA. Three workstreams concurrent — the Arabic chain plus onboarding. This is the most active NOW slate of the year.
+Active build or QA (bucket = NOW).
 
 | Issue | Title | Theme | Status | Priority | Size | Repo | Tags |
 |---|---|---|---|---|---|---|---|
-| [#3](https://github.com/TA-39/website/issues/3) | TA39 Onboarding & Training | Platform & UX | In progress | High | XL | website | promoted NEXT→NOW this week |
-| [#166](https://github.com/TA-39/api/issues/166) | Arabic Mode Summary Report Generation (RTL + Arabic Template) | Arabic / Multilingual | In progress | High | S | api | — |
+| [#3](https://github.com/TA-39/website/issues/3) | TA39 Onboarding & Training | Platform & UX | In progress | High | XL | website | — |
 | [#596](https://github.com/TA-39/frontend/issues/596) | [Stream 3][Epic] Arabic NLP Enablement for TA39 Feedback Platform | Arabic / Multilingual | In progress | High | XL | frontend | — |
 
-**Ship-order read.** #166 (`S`) remains the near-term shippable — it should land weeks ahead of the two XLs and give the Arabic market a credible RTL summary-report demo while #596 continues. #596 (Arabic NLP, `XL`) is a quarter-scale investment; do not expect it to close in Q2. #3 (Onboarding, `XL`) just kicked off — it competes for the same Q3 release window as the Arabic chain follow-ons (#99 HTR, #740 Learning Loop). Three XLs in flight across three repos means cross-team coordination cost is now the binding constraint, not engineering capacity per stream.
+**Ship-order read:** Both NOW items are High-priority XLs still in `In progress` (early-to-mid build), so neither is imminent. #596 (Arabic NLP) is the strategic one — it's the engine behind the whole Arabic bet and gates downstream Arabic work (#99 HTR, and the just-shipped #166 summary reports lean on the same NLP maturity). #3 (Onboarding & Training) is adoption infrastructure, not product capability. Only two items in flight is thin coverage for a team with 5 groomed NEXT items waiting.
 
-Nothing was promoted from NOW to RELEASED in the last week.
+**Recently promoted NOW → RELEASED:** [#166](https://github.com/TA-39/api/issues/166) closed today (2026-07-10). It should move out of any "in flight" mental model — it's live, and silent (unannounced).
 
 ---
 
 ## NEXT
 
-`Ready for Development` — groomed, unstarted, committed to the next open slot.
+`Ready for Development` — **groomed but unstarted**. Q2 realism rates whether a cold start can plausibly ship this quarter given size/priority.
 
 | Issue | Title | Theme | Priority | Size | Tags | Q2 realism |
 |---|---|---|---|---|---|---|
-| [#99](https://github.com/TA-39/graditron/issues/99) | Arabic Handwriting Recognition (HTR) Capability | Arabic / Multilingual | Medium | XL | — | **Defer to Q3.** XL cold-start, cross-repo (graditron), stacks on the #596 NLP pipeline. Not a 6-week effort. |
-| [#327](https://github.com/TA-39/frontend/issues/327) | Plagiarism Detection Integration | Competitive Parity | Medium | L | `Competitive Parity` label | **Must-start in Q2** if enterprise RFPs are a Q3 pipeline focus. L item, achievable if prioritized. |
-| [#701](https://github.com/TA-39/frontend/issues/701) | Microsoft Teams LMS Integration | Integrations & LMS breadth | Medium | L | — | **Must-start in Q2.** L item, unblocks Teams-standardized schools (large GCC + US enterprise segment). |
-| [#740](https://github.com/TA-39/frontend/issues/740) | Evolve Draft Revision Rounds into a "Learning Loop" System | Teacher-in-the-loop intelligence | Medium | L | — | **Q2 stretch / Q3 base.** Natural follow-on to #697 release. Features page already implies this exists. |
+| [#547](https://github.com/TA-39/frontend/issues/547) | Evolve TA39 Into an Agentic Instruction Platform | Agentic / Copilot evolution | High | XL | — | **Defer** — XL cold start; won't ship in ~6 weeks. Strategic, needs a real slot. |
+| [#99](https://github.com/TA-39/graditron/issues/99) | Arabic Handwriting Recognition (HTR) Capability | Arabic / Multilingual | Medium | XL | Gated by #596 | **Defer to Q3** — XL, cross-repo, depends on Arabic NLP maturity. |
+| [#327](https://github.com/TA-39/frontend/issues/327) | Plagiarism Detection Integration | Competitive Parity | Medium | L | `` `Competitive Parity` label `` (parity play) | **Defer** — L cold start; parity, not differentiation. Schedule deliberately. |
+| [#701](https://github.com/TA-39/frontend/issues/701) | Microsoft Teams LMS Integration | Integrations & LMS breadth | Medium | L | — | **Defer to Q3** — L; enterprise reach but not this quarter from cold. |
+| [#740](https://github.com/TA-39/frontend/issues/740) | Evolve Draft Revision Rounds into a "Learning Loop" System | Teacher-in-the-loop intelligence | Medium | L | Builds on shipped #697 | **Must-start candidate** — L, but rides live #697 foundation; best odds of a Q2 ship if picked first. |
 
-**Q2 realism summary.** Two of four NEXT items (#701, #327) are plausibly shippable in Q2 given sizes and priorities. #99 and #740 should be framed as Q3 realistically — don't commit them externally this quarter. With #3 now consuming active capacity on the `website` repo, the Q2 slate from NEXT is functionally capped at one-to-two items unless something is consciously deprioritized. Sequence deliberately.
+**Realism note:** every NEXT item is L or XL. From a cold start, none of the XLs (#547, #99) ships in a ~6-week window, and the Ls (#327, #701, #740) ship only if pulled immediately and staffed. #740 is the highest-leverage near-term pick — it extends a released feature rather than starting greenfield. If Q2 needs a visible win, start #740.
 
 ---
 
 ## LATER
 
-Backlog, bucketed by theme. Themes with no LATER items (Arabic, Quality & evaluation, Platform & UX) are omitted here; they still appear in the theme-portfolio view.
+Backlog, organized by theme. Only themes with LATER items appear here; the rest are in the scorecard above. ⚔️ = also carries the GitHub `Competitive Parity` label.
 
 ### Theme 1 — Agentic / Copilot evolution
 
-| Issue | Title | Priority | Size | Tags | Note |
-|---|---|---|---|---|---|
-| [#547](https://github.com/TA-39/frontend/issues/547) | Evolve TA39 Into an Agentic Instruction Platform | High | XL | — | The "north-star" agentic bet. High priority but XL means this is a 2026-H2 build at the earliest. |
-| [#649](https://github.com/TA-39/frontend/issues/649) | TA39 Copilot — Conversational, Agentic Interface Embedded in Core UI | High | XL | — | The UI-level agentic surface. Pairs with #547 — ship together or sequence deliberately. |
-| [#474](https://github.com/TA-39/frontend/issues/474) | Voice-Based Assignment Support: Audio Transcription, Language Detection | Medium | — | — | Voice as an input modality is a natural extension of the agentic platform; position as an agentic-era capability. |
+| Issue | Title | Priority | Size |
+|---|---|---|---|
+| [#649](https://github.com/TA-39/frontend/issues/649) | TA39 Copilot — Conversational, Agentic Interface Embedded in Core UI | High | XL |
+
+The agentic north star. Correctly parked in Later — it's an XL that depends on the released Copilot surface maturing and on #547 (the agentic-platform groundwork in NEXT) landing first. High priority signals intent; the sequencing (#547 → #649) is right.
 
 ### Theme 2 — Teacher-in-the-loop intelligence
 
-| Issue | Title | Priority | Size | Tags | Note |
-|---|---|---|---|---|---|
-| [#331](https://github.com/TA-39/frontend/issues/331) | Teacher-Led Calibration for AI Feedback (Delta-Based Templates) | High | L | — | The "teach the system your voice" loop. High-priority, L-size — should be prioritized for pull-forward. |
-| [#328](https://github.com/TA-39/frontend/issues/328) ⚔️ | Student-Teacher Interaction on Feedback & AI Score Disputes (HITL) | Medium | — | `Competitive Parity` label | Dispute flow is table-stakes in enterprise RFPs. Parity-driven but topical home is HITL. |
-| [#113](https://github.com/TA-39/frontend/issues/113) ⚔️ | Iterative Feedback during Writing Process — Socratic Style | Medium | XL | `Competitive Parity` label | XL parity play. Distinct from #697 (Revision Rounds) — #113 is in-flight guidance; #697 is cross-draft arc. |
+| Issue | Title | Priority | Size | |
+|---|---|---|---|---|
+| [#331](https://github.com/TA-39/frontend/issues/331) | Teacher-Led Calibration for AI Feedback (Delta-Based Template Refinement) | High | L | |
+| [#328](https://github.com/TA-39/frontend/issues/328) | Student-Teacher Interaction on Feedback & AI Score Disputes (Human-in-the-Loop) | Medium | — | ⚔️ |
+| [#113](https://github.com/TA-39/frontend/issues/113) | Iterative Feedback during Writing Process — Socratic Style | Medium | XL | ⚔️ |
+
+This is the deepest Later theme and the most strategically coherent — teacher control is TA39's core promise. #331 (High) is the standout: teacher-led calibration is the mechanism that makes "you review, adapt, and decide" real, and it's unprioritized-into-backlog rather than pulled forward. #113 is XL **and** authored by `duhajar`, not the product lead — see author-rule flag in Risks.
 
 *⚔️ = also carries the GitHub `Competitive Parity` label.*
 
 ### Theme 3 — Integrations & LMS breadth
 
-| Issue | Title | Priority | Size | Tags | Note |
-|---|---|---|---|---|---|
-| [#473](https://github.com/TA-39/frontend/issues/473) | Support Canvas Discussions as Source for TA39 Feedback | Medium | — | — | Expands Canvas surface beyond submissions. Features page already implies this is supported. |
-| [#226](https://github.com/TA-39/frontend/issues/226) | Support for re-use in Google Classroom | Low | — | — | Low-priority but the features page names it. Either pull forward or soften the claim. |
+| Issue | Title | Priority | Size |
+|---|---|---|---|
+| [#473](https://github.com/TA-39/frontend/issues/473) | Support Canvas Discussions as Source for TA39 Feedback Generation | Medium | — |
+| [#226](https://github.com/TA-39/frontend/issues/226) | User Requirement — support for re-use in Google Classroom | Low | — |
+
+Both back the "Canvas / Google Classroom breadth" features-page claim (Section 5). #226 is **Low** priority yet Google Classroom is marketed as first-class — mis-alignment called out in Strategic Call-outs (d). Neither is sized.
 
 ### Theme 4 — Monetization
 
-| Issue | Title | Priority | Size | Tags | Note |
-|---|---|---|---|---|---|
-| [#374](https://github.com/TA-39/frontend/issues/374) ⚔️ | Individual Paid User — Stripe Subscription & Feature Entitlements | Low | — | `Competitive Parity` label | **The entire monetization theme is one `Low` backlog item.** If self-serve revenue is a 2026 goal, this is mis-prioritized. If not, archive and stop carrying the noise. |
+| Issue | Title | Priority | Size | |
+|---|---|---|---|---|
+| [#374](https://github.com/TA-39/frontend/issues/374) | Individual Paid User — Stripe Subscription & Feature Access Control | Low | — | ⚔️ |
+
+The **only** monetization item on the entire board, and it's Low/Backlog/unsized. If individual-user revenue matters in 2026, this is mis-prioritized. See Call-out (b).
 
 *⚔️ = also carries the GitHub `Competitive Parity` label.*
+
+### Theme 5 — Platform & UX
+
+| Issue | Title | Priority | Size |
+|---|---|---|---|
+| [#474](https://github.com/TA-39/frontend/issues/474) | Voice-Based Assignment Support: Audio Transcription, Language Detection, Feedback | Medium | — |
+
+Parked under Platform for lack of a cleaner home, but #474 is really a **new submission modality** (audio), not UX polish — closer in ambition to Arabic HTR (#99) than to a design refresh. If voice submissions become a market ask, it deserves a topical theme and a size. Unsized today.
 
 ---
 
 ## Shipped but NOT publicly announced
 
-Hidden inventory. Released, silent. These are the "pitch ammunition" bucket — retroactive announcements cost little and turn shipped work into renewed credibility.
+The hidden inventory — released, but no community post and not on the features page (`[SILENT]` in RELEASED). This is pitch ammunition sitting unused.
 
 | Issue | Title | Theme | Repo | Released | Status |
 |---|---|---|---|---|---|
-| [#188](https://github.com/TA-39/frontend/issues/188) | Update UI for New Class Analysis Report & Assignment Tabs | Platform & UX | frontend | 2025-02-02 | In Production & Done |
-| [#532](https://github.com/TA-39/frontend/issues/532) | Internationalization — Multi Language Support for Frontend UI | Arabic / Multilingual | frontend | 2025-08-03 | In Production & Done |
+| [#166](https://github.com/TA-39/api/issues/166) | Arabic Mode Summary Report Generation (RTL + Arabic Template) | Arabic / Multilingual | api | 2026-07-10 | In Production & Done |
+| [#532](https://github.com/TA-39/frontend/issues/532) | Internationalization — Multi-Language Support for Frontend UI | Arabic / Multilingual | frontend | 2025-08-03 | In Production & Done |
+| [#188](https://github.com/TA-39/frontend/issues/188) | Update UI for New Class Analysis Report and Assignment Tabs | Platform & UX | frontend | 2025-02-02 | In Production & Done |
 
-**Recommended retroactive posts:**
+**Recommended retroactive posts (top 3 — and there are exactly 3):**
 
-1. **#532 Internationalization foundation** — this is the most strategic silent ship. It is the plumbing that makes the Arabic bet credible. Announcing it now frames the Arabic roadmap (#166, #596, #99) as a deliberate long-arc investment rather than a reactive feature drop.
-2. **#188 Class Analysis UI refresh** — short post, visual before/after, re-establishes momentum on teacher-facing surfaces.
+1. **#166 Arabic Mode Summary Report** — shipped *today*, and it's the visible payoff of the MENA/GCC bet: full Arabic RTL summary reports. Strongest story, freshest, zero coverage. Announce it.
+2. **#532 Internationalization** — the multilingual foundation that makes #166 and the whole Arabic push possible. A "TA39 now speaks your language" post frames the market position. Nearly a year live and silent.
+3. **#188 Class Analysis Report & Assignment Tabs UI** — less strategic, but a concrete usability win teachers would recognize. Lightweight post.
 
-Two silent releases on a base of ten is a low ratio — the team is mostly announcing what it ships. Close the gap on these two and the communication story is clean.
+Two of the three silent items are Arabic/Multilingual — the exact theme we're betting the market on, and the exact theme with zero announcements. That's the biggest self-inflicted comms gap on the board.
 
 ---
 
 ## Risks & Dependencies
 
-1. **Public-surface vs. shipped product.** Features-page claims for Canvas breadth and handwritten work outrun shipped reality (#473, #226, #99 all unstarted or backlog). RFPs will expose this. Either pull forward or edit the page.
-2. **Arabic theme dependency chain.** #166 → #596 → #99 is a single chain of dependencies spread across three repos (api, frontend, graditron). If any link slows, the Arabic market launch slips. There is no in-flight Arabic work *outside* this chain — no redundancy.
-3. **Three XLs in flight, three repos.** With #3 now in progress alongside #596 and #166, NOW spans three repositories simultaneously. None of the three are sized below `S`. Cross-repo coordination, not raw engineering capacity, is the binding risk for the next sprint.
-4. **Monetization under-investment.** One `Low` priority backlog item (#374) is the entire self-serve revenue story. This is a portfolio-level gap, not an issue-level one.
-5. **Missing Iteration/Sprint field population.** None of the in-scope items have an Iteration populated. This means sprint commitments live outside the board, and the board cannot serve as a sprint-planning artifact without fixing this.
-6. **Quality & eval stack has aged out of the active roadmap.** The previous roadmap carried Sentinel/Eval Harness items; none are in-scope today. Either they're archived (in which case eval is running on vibes) or they belong on this board. Clarify.
+1. **Public surface vs. shipped product (the marketing gap).** "Handwritten Work Support" is on the features page, but Arabic HTR (#99) is `Ready for Development` (unstarted). If prospects read that as live Arabic handwriting capability, we're overstating. **High** risk — audit with marketing this week and either soften the page or pull #99 forward.
+2. **Arabic bet is single-threaded through #596.** Arabic NLP Enablement (#596, NOW, XL) gates Arabic HTR (#99) and underpins the just-shipped summary reports (#166). It's one epic, in early-to-mid build, spanning `frontend`/`api`/`graditron`. A slip here slips the entire Arabic theme — the theme we're marketing hardest.
+3. **Cross-repo dependency concentration.** Arabic work spans `frontend` (#596), `api` (#166), and `graditron` (#99 HTR). Coordination cost is real and there's no single owning repo — assign an epic owner across the three.
+4. **Teacher-in-the-loop is deep in backlog while it's the core promise.** The theme with the most Later items (#331, #328, #113) includes the mechanism (#331 calibration, High) that makes "you review and decide" literally true. It's unprioritized into backlog rather than staged. Strategic under-investment risk.
+5. **Iteration/Sprint field is 100% unpopulated** — 26 of 26 items have no Iteration value. The board can't express *when* anything lands, only *which bucket*. Any date-based commitment is currently guesswork. Populate Iteration on at least all NOW and NEXT items.
+6. **Author-rule violation.** [#113](https://github.com/TA-39/frontend/issues/113) is `Type=Feature` but authored by `duhajar`, not the product lead `adnanwarsi`. Either the lead consciously elevated it (then re-assign/confirm) or it's mis-typed and should be a task. Resolve so `Type=Feature` stays a trustworthy signal.
+7. **NOW pipeline is thin (2 items).** Only two items in active build against five groomed NEXT items. If either NOW item stalls, near-term shipping velocity drops to near zero.
 
 ---
 
 ## Strategic Call-outs
 
-**(a) Teacher-in-the-loop is the differentiator, and shipping confirms it.**
-#697 (Revision Rounds) and #344 (Feedback Templates) both shipped in the last eight weeks. Both are teacher-in-the-loop features. #331 (Calibration) and #740 (Learning Loop) are the obvious next steps. This is the theme with real velocity — lean into it.
+**(a) Agentic is the right "Later" bet.** #547 (NEXT) → #649 (Later) sequences the agentic evolution correctly on top of a released, proven Copilot surface (#384/#385/#366). Don't rush #649 ahead of #547; don't let it drift indefinitely either — it's the differentiation story for 2026.
 
-**(b) Agentic is the right long-arc bet and is correctly parked in Later.**
-#547 and #649 are both XL and flagged as 2026-H2 work. That's honest sequencing: copilot (shipped) → agentic (next era). Don't let marketing collapse the two timelines.
+**(b) Monetization is underweighted.** [#374](https://github.com/TA-39/frontend/issues/374) is the *only* monetization item on the board — Low priority, Backlog, unsized. If individual-user revenue matters in 2026, this is mis-prioritized; size it and lift it. If it doesn't, archive it and stop carrying the noise. Either way, "one Low-priority Stripe ticket" is not a monetization strategy.
 
-**(c) Arabic is the largest uncommitted-risk cluster.**
-Three items (#166 NOW, #596 NOW, #99 NEXT) plus a silent foundation (#532) add up to a multi-quarter, multi-repo investment. If there is an Arabic-market GTM date, surface the dependency chain on the board. If there isn't, sequence #166 to ship standalone as a credible Arabic demo while #596 continues — that's the lowest-risk Arabic-market signal we can put on the calendar.
+**(c) Quality & evaluation stack is nearly invisible.** Only one item maps to this theme (#440 Exemplars, released) and there is **no** Eval Harness / Sentinel / scoring-confidence work anywhere in NOW/NEXT/LATER. For a product whose value is feedback quality, having no live evaluation-infrastructure investment on the roadmap is a gap. If eval work exists off-board, get it on-board.
 
-**(d) Monetization is the portfolio hole.**
-Exactly one `Low` priority backlog item. If individual-user revenue is part of the 2026 story, #374 should move up and get sized. If not, say so out loud — the silence on this line is a leadership signal either way.
+**(d) Google Classroom re-use is Low/Backlog but marketed as first-class.** [#226](https://github.com/TA-39/frontend/issues/226) is Low priority and unsized, yet "Canvas / Google Classroom breadth" is a headline features-page claim. Align priority with the public promise, or adjust the promise.
 
-**(e) Hidden inventory is small and easy to close.**
-Two silent releases. The 2026 cadence has been clean — most shipped work gets a post. Close #188 and #532 with retroactive posts and the communication loop is effectively complete.
+**(e) Hidden inventory = pitch ammunition.** Three released features (#166, #532, #188) have zero public coverage — and two of them are the Arabic/Multilingual work we're betting the market on. Announcing #166 and #532 costs a day of writing and directly reinforces the MENA positioning. Highest-ROI comms move available.
 
-**(f) Competitive Parity is a distinct lens — review the portfolio.**
-Four items carry the `Competitive Parity` label:
+**(f) Competitive Parity is a distinct lens.** Four items carry the `Competitive Parity` label:
+- **Pure parity play (own theme):** [#327](https://github.com/TA-39/frontend/issues/327) Plagiarism Detection (NEXT) — no topical home; exists to match competitors.
+- **Topical items with a parity overlay (⚔️):** [#328](https://github.com/TA-39/frontend/issues/328) Score Disputes / HITL (Teacher-in-loop), [#113](https://github.com/TA-39/frontend/issues/113) Socratic iterative feedback (Teacher-in-loop), [#374](https://github.com/TA-39/frontend/issues/374) Stripe subscriptions (Monetization).
 
-- [#327](https://github.com/TA-39/frontend/issues/327) Plagiarism Detection — pure parity play, no topical home; theme = `Competitive Parity`.
-- [#113](https://github.com/TA-39/frontend/issues/113) Socratic Feedback — topical (Teacher-in-loop) + parity overlay.
-- [#328](https://github.com/TA-39/frontend/issues/328) HITL Disputes — topical (Teacher-in-loop) + parity overlay.
-- [#374](https://github.com/TA-39/frontend/issues/374) Stripe Subscriptions — topical (Monetization) + parity overlay.
-
-Three of the four are `Medium` or `Low`. Under-investing loses enterprise RFPs (plagiarism, disputes). Over-investing burns differentiation capacity. Leadership question: is parity a Q3 priority or a 2026-H2 priority? Right now the label is applied but the priorities don't reflect an answer.
-
-**(g) Onboarding is no longer hypothetical.**
-#3 moved from NEXT to NOW this refresh. The `website` repo is in the active mix for the first time, which means content, design, and product all need to coordinate against an in-flight build, not a future one. The team should add #3 to the sprint-review surface and confirm staffing — XL on a new repo is a quiet risk vector.
+Portfolio question for leadership: three of the four parity items sit in backlog. Under-investing in parity loses enterprise RFPs (plagiarism detection is table stakes in procurement); over-investing burns capacity we need for differentiation (agentic, teacher-in-the-loop, Arabic). Decide the parity budget explicitly rather than letting it default to "backlog forever."
 
 ---
 
 ## Changes vs. the board today
 
-1. **Populate Iteration fields** on every NOW and NEXT item so the board becomes a sprint artifact. With three concurrent NOW items across three repos, missing iteration data is now actively harmful, not just untidy.
-2. **Link cross-repo dependencies** between #166 / #596 / #99 explicitly so a slip on one surfaces on the others. Add #3 to the cross-repo list — `website` is now in active scope alongside frontend, api, and graditron.
-3. **Reprioritize or retire #374** — force a decision on self-serve monetization.
-4. **Set a Priority on #327** — Medium today, but if enterprise RFPs are the Q3 target, it should be High. Same logic for #701 (also Medium) given the size of the Teams-standardized GCC + US segment.
-5. **File or close the orphan announcement posts** (Folders, Rubric Converter, Trusted Apps Pledge) — either they need feature issues or the posts should be archived from the announcements reference.
-6. **Clarify the quality/eval stack.** If Sentinel / Eval Harness work still exists, add it back to project #4. If not, add a note so future roadmap reads don't ask.
-7. **Size the Q3 slate explicitly.** With #3 now consuming active capacity and #99, #740 still sized XL/L behind it, the Q3 commitment list cannot be more than two items beyond the Arabic chain without explicit capacity carve-out.
+Concrete actions to reconcile the board with reality:
+
+1. **Re-type or confirm #113** — resolve the `duhajar` author-rule violation (elevate deliberately or convert to a task).
+2. **Populate Iteration on all NOW + NEXT items** (7 items) so the board can express timing, not just bucket.
+3. **Set a Size on unsized items** — #384, #385 (released, retroactive), and backlog items #328, #374, #473, #226, #474 all lack Size, blocking any capacity planning.
+4. **Re-prioritize #226** (Google Classroom) up from Low, or soften the features-page claim — pick one.
+5. **Re-prioritize / size #374** (Monetization) per Call-out (b), or archive it.
+6. **Audit "Handwritten Work Support" claim** against #99's unstarted status with marketing (Risk 1).
+7. **File issues (or explicitly drop)** the three orphaned announcement posts: Folders, Rubric Converter, Trusted Apps Pledge.
+8. **Draft retroactive announcements** for #166 and #532 (Call-out e / Section 11).
+9. **Assign a cross-repo epic owner** for the Arabic theme spanning #596/#166/#99 (Risk 3).
 
 ---
 
 ## Appendix — Feature Blurbs
 
-One-sentence human explanations of what each feature does. These are rendered under the title on the HTML dashboard cards. Keep them short (≤ 22 words) and say what users *get*, not how it's built. Issue numbers are the join key — the HTML renderer falls back to no-blurb gracefully when an entry is missing, and prints a stderr warning listing gaps so they're easy to backfill.
+One-sentence, plain-English explanation per feature (what users get).
 
 | # | Blurb |
 |---|---|
-| 3 | Guided onboarding and training surface so new schools can self-serve through setup without a CSM hand-hold. |
-| 99 | Handwritten-Arabic OCR so scanned handwritten work flows through the same feedback loop as typed submissions. |
-| 113 | Socratic feedback during writing — TA39 asks guiding questions instead of grading completed work. |
-| 166 | RTL summary reports in Arabic — the first real Arabic-market output teachers can hand to students. |
-| 188 | Class-level analytics view so teachers can spot patterns across a whole class, not one paper at a time. |
-| 226 | Re-use existing Google Classroom assignments inside TA39 so teachers don't rebuild content they've already posted. |
-| 327 | Integrated plagiarism check on submissions — the enterprise-RFP parity item that unblocks procurement conversations. |
-| 328 | A structured way for students to challenge AI feedback or scores with the teacher in the loop. |
-| 331 | Teachers correct AI feedback with deltas — the system learns their voice without prompt-retraining. |
-| 343 | Rebuilt rubric creation with AI-assisted criteria drafting so teachers optimize rubrics in minutes instead of hours. |
-| 344 | One-click feedback templates let teachers capture how they give feedback and reuse it across assignments. |
-| 366 | Copilot panels that adapt to where the user is in the product, so help shows up in context. |
-| 374 | Self-serve Stripe subscription for individual teachers — the monetization path that doesn't require a school contract. |
-| 378 | Students submit Google Docs straight through Canvas LTI without leaving the LMS workflow. |
-| 384 | Conversational sidekick that turns rubric feedback into teacher-friendly next steps and talking points. |
-| 385 | Student-facing copilot that explains feedback plainly and answers 'what do I do with this?' in the moment. |
-| 440 | AI-generated student exemplars for any rubric show classes what each score level actually looks like. |
-| 473 | Canvas discussion posts become a first-class submission surface — feedback on participation, not just essays. |
-| 474 | Voice submissions — students record audio, TA39 transcribes, detects language, and runs the normal feedback loop. |
-| 532 | Multi-language UI foundation — the scaffolding that lets the product ship Arabic and other locales. |
-| 547 | The bet that TA39 becomes an agent that autonomously helps teachers plan, assign, and coach. |
-| 596 | End-to-end Arabic NLP pipeline — OCR, tokenization, feedback — that makes TA39 feel native to Arabic-first classrooms. |
-| 649 | Copilot embedded in the core UI as a conversational agent, replacing menus where an agent makes more sense. |
-| 697 | Surfaces the arc of a student's drafts so teachers can see revision quality — not just the final version. |
-| 701 | Microsoft Teams LTI support so schools standardized on Teams can adopt TA39 without switching LMSes. |
-| 740 | Turns Revision Rounds into a longitudinal learning loop — tracks student growth patterns across many assignments. |
+| 3 | Guided onboarding and training so new teachers reach productive use of TA39 quickly. |
+| 99 | Handwritten-Arabic OCR so scanned Arabic work flows through the same feedback loop as typed submissions. |
+| 113 | Socratic, in-the-moment prompts that guide students while they write instead of only after. |
+| 166 | Full Arabic, right-to-left summary reports generated from an Arabic-native template. |
+| 188 | Refreshed UI for the class analysis report and assignment tabs, easier to scan and navigate. |
+| 226 | Reuse existing TA39 assignments and setup inside Google Classroom without rebuilding them. |
+| 327 | Built-in plagiarism checking on submissions, surfaced alongside feedback. |
+| 328 | A structured way for students to raise disputes and for teachers to override AI scores. |
+| 331 | Teachers calibrate the AI by editing sample feedback; the system learns the delta and matches their style. |
+| 343 | Rebuilt rubric creation and setup, with AI help to optimize rubrics in the library. |
+| 344 | A simpler flow for building reusable feedback templates. |
+| 366 | Context-aware Copilot panels that turn feedback into a two-way dialogue for students and teachers. |
+| 374 | Individual paid subscriptions via Stripe, with feature access tied to entitlement. |
+| 378 | Accept Google Doc submissions through Canvas via LTI, no manual export needed. |
+| 384 | A teacher-side Copilot that turns feedback into guided conversations. |
+| 385 | A student-side Copilot that helps students understand and act on their feedback. |
+| 440 | Generate, apply, and fine-tune exemplar answers for any rubric to ground AI feedback. |
+| 473 | Use Canvas Discussions posts as a source for TA39 feedback generation. |
+| 474 | Accept audio assignment submissions with transcription, language detection, and spoken-work feedback. |
+| 532 | A fully translatable frontend UI, the foundation for delivering TA39 in multiple languages. |
+| 547 | Evolve TA39 from a feedback generator into an agentic assistant that acts on the teacher's behalf. |
+| 596 | Arabic natural-language processing so feedback quality in Arabic matches the English experience. |
+| 649 | A conversational, agentic Copilot embedded directly in the core UI. |
+| 697 | Teacher-controlled draft rounds that make student revision across drafts visible and reviewable. |
+| 701 | Microsoft Teams integration so Teams-based classes can use TA39 in their LMS. |
+| 740 | Extends revision rounds into a learning-loop system that tracks growth across drafts over time. |
 
 ---
 
 ## Follow-ups I can generate on request
 
-- **Exec version** — 1-page condensed roadmap for board/investors with bucket counts, marquee releases, and risks only.
-- **Sprint plan** — honest 2-week cut from NOW + top NEXT items with capacity and carryover accounted for.
-- **Competitive frame** — call-out (f) expanded into a battle-card / RFP-readiness view.
-- **Refreshed xlsx tracker** — the 26-item list with bucket, status, priority, size, labels, and announcement-linkage columns.
-- **Retroactive-announcement drafts** — community posts for #532 and #188 in TA39 voice.
+- **Executive one-pager** — the board distilled to bets, gaps, and the three decisions leadership must make (monetization, parity budget, Arabic ownership).
+- **Q2/Q3 sprint plan** — sequenced from NEXT (#740 first) with Iteration assignments filled in.
+- **Competitive frame** — map the four parity items against named competitors and RFP checklists.
+- **Comms plan** — drafts for the retroactive announcements (#166, #532) and the #366 announce-to-release retrospective.
+- **Refreshed xlsx tracker** — the full board as a filterable spreadsheet with theme, bucket, size, and Iteration columns.
+- **Marketing-page reconciliation** — a redline of www.ta-39.com/en/features against shipped reality (fixes the Handwritten Work Support overstatement).
