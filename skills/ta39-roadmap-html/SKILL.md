@@ -112,11 +112,73 @@ The script:
 - **Don't embed secrets, PATs, or raw API responses.** The HTML is
   sharable — treat it as a read-only view.
 
-## Step 3 — Report
+## Step 3 — Publish to production (GitHub Pages)
 
-Share the output as a computer:// link. If the MD changed meaningfully
-(new issues added, buckets reshuffled), call out the diff in one or two
-sentences so the user knows what's new.
+The dashboard is only useful externally if it's live. Publish both freshly
+generated files — `TA39-Roadmap.md` and `TA39-Roadmap.html` — to the public
+repo **[`TA-39/roadmap`](https://github.com/TA-39/roadmap)**, whose `main`
+branch is served by GitHub Pages at
+**https://ta-39.github.io/roadmap/TA39-Roadmap.html**. A commit to `main`
+auto-triggers the Pages rebuild (~1 min).
+
+### The confirmation gate depends on context
+
+- **Interactive run** (a human is in the session — e.g. someone said
+  "update TA39 roadmap" in Cowork/Claude Code): this touches a public,
+  externally-visible page, so **confirm before pushing.** Show exactly what
+  will change — the two filenames, the commit message, and the live URL —
+  and wait for an explicit "yes." If the user declines, stop after Step 4
+  (the local files and computer:// link are still delivered).
+- **Unattended run** (the `ta39-weekly-roadmap-refresh` scheduled task, or
+  any run with no human to answer): **do not block on a gate** — a cron has
+  nobody to confirm. Publish automatically, matching the pre-existing weekly
+  behavior. Detect this from the invoking prompt (scheduled-task prompts say
+  so explicitly) or the absence of an interactive user.
+
+### How to publish
+
+Only ever modify the two data files. Never touch `README.md`, the `skills/`
+snapshot, or the `.skill` bundles in that repo.
+
+```bash
+WORK="$(mktemp -d)/roadmap-publish"
+gh repo clone TA-39/roadmap "$WORK" -- --depth 1
+cp <md_path>  "$WORK/TA39-Roadmap.md"
+cp <out_path> "$WORK/TA39-Roadmap.html"
+git -C "$WORK" add TA39-Roadmap.md TA39-Roadmap.html
+git -C "$WORK" status --short   # confirm ONLY those two files are staged
+git -C "$WORK" -c user.name="Adnan Warsi" -c user.email="adnan@ta-39.com" \
+  commit -m "Roadmap refresh — <YYYY-MM-DD>"
+git -C "$WORK" push origin main
+```
+
+- Commit message: `Weekly roadmap refresh — <date>` for the Sunday job,
+  `Roadmap refresh — <date>` for an intra-week manual push.
+- The scheduled job may instead open a PR and auto-squash-merge (its
+  existing policy) — both land on `main` and trigger Pages. A direct push
+  is fine for manual runs.
+- **Never commit a PAT, token, or raw API response.** Auth comes from the
+  ambient `gh` login (needs `repo` scope; the Projects read in the MD skill
+  needs `read:project`).
+
+### Verify it went live
+
+```bash
+gh api repos/TA-39/roadmap/pages/builds/latest -q '.status + " " + .commit'
+curl -sS -o /dev/null -w '%{http_code}\n' \
+  https://ta-39.github.io/roadmap/TA39-Roadmap.html
+```
+
+Wait for the build `status` to be `built` on the new commit SHA and the URL
+to return `200`, then confirm to the user with the live link.
+
+## Step 4 — Report
+
+Share the local output as a computer:// link **and** the live URL
+(https://ta-39.github.io/roadmap/TA39-Roadmap.html) once Step 3 confirms the
+rebuild. If the MD changed meaningfully (new issues added, buckets
+reshuffled), call out the diff in one or two sentences so the user knows
+what's new.
 
 ## Troubleshooting
 
