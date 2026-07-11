@@ -1,11 +1,13 @@
 # TA39 Product Roadmap
 
 **Source of truth:** GitHub Projects board [TA-39 Product Development (#4)](https://github.com/orgs/TA-39/projects/4)
-**Scope:** 26 in-scope `Type=Feature` items (author rule: `Type=Feature` is reserved for the product lead `adnanwarsi`; exceptions flagged).
-**Retrieved:** 2026-07-10 (live GraphQL pull via `fetch_board.py`).
+**Scope:** 25 in-scope `Type=Feature` items (author rule: `Type=Feature` is reserved for the product lead `adnanwarsi`; exceptions flagged).
+**Retrieved:** 2026-07-11 (live GraphQL pull via `fetch_board.py`).
 **Horizon:** Released inventory → Now (in build/QA) → Next (ready, unstarted) → Later (backlog, theme-organized).
 
-Bucket counts this pull: **RELEASED 11 · NOW 2 · NEXT 5 · BLOCKED 0 · LATER 8** (2 archived, excluded).
+Bucket counts this pull: **RELEASED 11 · NOW 1 · NEXT 5 · BLOCKED 0 · LATER 8** (3 archived, excluded).
+
+> **Change since last pull (2026-07-10):** [#596 Arabic NLP Enablement](https://github.com/TA-39/frontend/issues/596) was **closed as "not planned / superseded"** and removed from the board. It was **not dropped** — the Arabic NLP capability is effectively delivered through graditron's grading-pipeline modernization: [graditron #96](https://github.com/TA-39/graditron/issues/96) ("Arabic Grading Quality Experiments: Fanar/GPT routing and Arabic flow comparison," closed 2026-07-09) under the open epic [graditron #123](https://github.com/TA-39/graditron/issues/123). The old frontend-centric epic (fixed B1→B2→B3 design) was retired because that routed architecture replaced it. Because graditron #96/#123 are not `Type=Feature` on board #4, this roadmap can no longer see the Arabic NLP work even though it's effectively done. It was the Arabic theme's only NOW item. See NOW, Risk 2, and Call-out (g).
 
 ---
 
@@ -47,11 +49,11 @@ The board's status names do not map to intuition. Read this before reading the t
 | Bucket | Count | What it contains |
 |---|---|---|
 | RELEASED | 11 | Live in production. |
-| NOW | 2 | Active build/QA. |
+| NOW | 1 | Active build/QA. |
 | NEXT | 5 | Groomed, unstarted (`Ready for Development`). |
 | BLOCKED | 0 | Nothing formally blocked this pull. |
 | LATER | 8 | Backlog, organized by theme below. |
-| **In-scope total** | **26** | (+2 archived, excluded.) |
+| **In-scope total** | **25** | (+3 archived, excluded.) |
 
 ### Theme portfolio scorecard
 
@@ -62,7 +64,7 @@ Each in-scope item carries exactly one theme (strongest topical home). ⚔️ = 
 | Agentic / Copilot evolution | 3 | 0 | 1 | 1 | 5 |
 | Teacher-in-the-loop intelligence | 1 | 0 | 1 | 3 | 5 |
 | Quality & evaluation stack | 1 | 0 | 0 | 0 | 1 |
-| Arabic / Multilingual | 2 | 1 | 1 | 0 | 4 |
+| Arabic / Multilingual | 2 | 0 | 1 | 0 | 3 |
 | Integrations & LMS breadth | 1 | 0 | 1 | 2 | 4 |
 | Monetization | 0 | 0 | 0 | 1 | 1 |
 | Competitive Parity | 0 | 0 | 1 | 0 | 1 |
@@ -72,7 +74,7 @@ Each in-scope item carries exactly one theme (strongest topical home). ⚔️ = 
 
 Released dates cluster in two waves. The **Copilot wave** (Apr–Aug 2025: #384, #385, #366, #378, #440, #532, #188) established the assistant surface and i18n plumbing. The **authoring/revision wave** (Mar–Apr 2026: #343, #344, #697) rebuilt rubric, template, and revision workflows. Most recent: **#166 Arabic Mode Summary Report closed today (2026-07-10)** — freshly promoted from build to RELEASED and not yet announced.
 
-Throughput is real but lumpy — the pipeline is front-loaded with released Copilot/authoring work and thin in NOW (only 2 items). The NEXT queue is heavy on L/XL cold starts, so near-term ship velocity depends entirely on when those get pulled into build.
+Throughput is real but lumpy — the pipeline is front-loaded with released Copilot/authoring work and now **critically thin in NOW (a single item)** after #596 left the board. The NEXT queue is heavy on L/XL cold starts, so near-term ship velocity depends entirely on when those get pulled into build. Note that real Arabic-NLP delivery is happening *off* this board (graditron #96/#123), so the board understates actual engineering activity.
 
 ---
 
@@ -144,11 +146,12 @@ Active build or QA (bucket = NOW).
 | Issue | Title | Theme | Status | Priority | Size | Repo | Tags |
 |---|---|---|---|---|---|---|---|
 | [#3](https://github.com/TA-39/website/issues/3) | TA39 Onboarding & Training | Platform & UX | In progress | High | XL | website | — |
-| [#596](https://github.com/TA-39/frontend/issues/596) | [Stream 3][Epic] Arabic NLP Enablement for TA39 Feedback Platform | Arabic / Multilingual | In progress | High | XL | frontend | — |
 
-**Ship-order read:** Both NOW items are High-priority XLs still in `In progress` (early-to-mid build), so neither is imminent. #596 (Arabic NLP) is the strategic one — it's the engine behind the whole Arabic bet and gates downstream Arabic work (#99 HTR, and the just-shipped #166 summary reports lean on the same NLP maturity). #3 (Onboarding & Training) is adoption infrastructure, not product capability. Only two items in flight is thin coverage for a team with 5 groomed NEXT items waiting.
+**Ship-order read:** After #596 left the board, exactly **one** feature is in active build — [#3](https://github.com/TA-39/website/issues/3) Onboarding & Training, a High-priority XL still `In progress` (early-to-mid build), so not imminent. And #3 is adoption infrastructure, not product capability: the board currently shows **zero product-capability features in flight**. That's a real coverage gap against five groomed NEXT items waiting to be pulled.
 
-**Recently promoted NOW → RELEASED:** [#166](https://github.com/TA-39/api/issues/166) closed today (2026-07-10). It should move out of any "in flight" mental model — it's live, and silent (unannounced).
+**But the board understates reality.** The Arabic NLP engine — the strategic work #596 used to represent — is being delivered in graditron (#96 closed 2026-07-09, under the open modernization epic #123). Because those aren't `Type=Feature` on board #4, they don't appear in NOW. Real capability work is happening; this roadmap just can't see it. That's a tracking gap (Risk 2), not an idle-team gap.
+
+**Left NOW since last pull:** [#596](https://github.com/TA-39/frontend/issues/596) closed as *not planned / superseded* (2026-07-11) — effectively delivered via graditron, not abandoned. [#166](https://github.com/TA-39/api/issues/166) (closed 2026-07-10) is now firmly RELEASED — live, and still silent (unannounced).
 
 ---
 
@@ -159,7 +162,7 @@ Active build or QA (bucket = NOW).
 | Issue | Title | Theme | Priority | Size | Tags | Q2 realism |
 |---|---|---|---|---|---|---|
 | [#547](https://github.com/TA-39/frontend/issues/547) | Evolve TA39 Into an Agentic Instruction Platform | Agentic / Copilot evolution | High | XL | — | **Defer** — XL cold start; won't ship in ~6 weeks. Strategic, needs a real slot. |
-| [#99](https://github.com/TA-39/graditron/issues/99) | Arabic Handwriting Recognition (HTR) Capability | Arabic / Multilingual | Medium | XL | Gated by #596 | **Defer to Q3** — XL, cross-repo, depends on Arabic NLP maturity. |
+| [#99](https://github.com/TA-39/graditron/issues/99) | Arabic Handwriting Recognition (HTR) Capability | Arabic / Multilingual | Medium | XL | ⚠️ status conflict | **Reconfirm before scheduling** — XL; #596's closing note explicitly says Arabic OCR is *intentionally unsupported* and needs a *new* product/technical program. Yet #99 sits in NEXT as "Ready for Development." Resolve the contradiction (see Risk 2) before it's pulled. |
 | [#327](https://github.com/TA-39/frontend/issues/327) | Plagiarism Detection Integration | Competitive Parity | Medium | L | `` `Competitive Parity` label `` (parity play) | **Defer** — L cold start; parity, not differentiation. Schedule deliberately. |
 | [#701](https://github.com/TA-39/frontend/issues/701) | Microsoft Teams LMS Integration | Integrations & LMS breadth | Medium | L | — | **Defer to Q3** — L; enterprise reach but not this quarter from cold. |
 | [#740](https://github.com/TA-39/frontend/issues/740) | Evolve Draft Revision Rounds into a "Learning Loop" System | Teacher-in-the-loop intelligence | Medium | L | Builds on shipped #697 | **Must-start candidate** — L, but rides live #697 foundation; best odds of a Q2 ship if picked first. |
@@ -244,12 +247,12 @@ Two of the three silent items are Arabic/Multilingual — the exact theme we're 
 ## Risks & Dependencies
 
 1. **Public surface vs. shipped product (the marketing gap).** "Handwritten Work Support" is on the features page, but Arabic HTR (#99) is `Ready for Development` (unstarted). If prospects read that as live Arabic handwriting capability, we're overstating. **High** risk — audit with marketing this week and either soften the page or pull #99 forward.
-2. **Arabic bet is single-threaded through #596.** Arabic NLP Enablement (#596, NOW, XL) gates Arabic HTR (#99) and underpins the just-shipped summary reports (#166). It's one epic, in early-to-mid build, spanning `frontend`/`api`/`graditron`. A slip here slips the entire Arabic theme — the theme we're marketing hardest.
-3. **Cross-repo dependency concentration.** Arabic work spans `frontend` (#596), `api` (#166), and `graditron` (#99 HTR). Coordination cost is real and there's no single owning repo — assign an epic owner across the three.
+2. **The Arabic NLP engine is delivered but invisible to this roadmap — and #99 contradicts it.** The strategic Arabic NLP work moved from feature-epic #596 (now closed/superseded) to graditron's grading-pipeline modernization ([#96](https://github.com/TA-39/graditron/issues/96), closed 2026-07-09, under open epic [#123](https://github.com/TA-39/graditron/issues/123)). That's good — it shipped. But because those aren't `Type=Feature` on board #4, the roadmap can't see the single most strategic capability the company is building. Worse, #596's closing note states **Arabic OCR is intentionally unsupported and requires a new product/technical program**, while [#99 Arabic HTR](https://github.com/TA-39/graditron/issues/99) still sits in NEXT as "Ready for Development." Either #99 is stale and should be re-statused, or a new Arabic-OCR program is being greenlit — decide which, because right now the board tells prospects one story and the engineering ledger tells another.
+3. **Cross-repo dependency concentration.** Arabic capability now spans `graditron` (NLP routing #96/#123, HTR #99), `api` (#166 summary reports, shipped), and `frontend` (i18n #532, shipped). Coordination cost is real and there's no single owning repo or feature-board epic that captures the whole Arabic program — assign one owner with visibility across all three, and get the live graditron work represented on board #4 so leadership can see it.
 4. **Teacher-in-the-loop is deep in backlog while it's the core promise.** The theme with the most Later items (#331, #328, #113) includes the mechanism (#331 calibration, High) that makes "you review and decide" literally true. It's unprioritized into backlog rather than staged. Strategic under-investment risk.
 5. **Iteration/Sprint field is 100% unpopulated** — 26 of 26 items have no Iteration value. The board can't express *when* anything lands, only *which bucket*. Any date-based commitment is currently guesswork. Populate Iteration on at least all NOW and NEXT items.
 6. **Author-rule violation.** [#113](https://github.com/TA-39/frontend/issues/113) is `Type=Feature` but authored by `duhajar`, not the product lead `adnanwarsi`. Either the lead consciously elevated it (then re-assign/confirm) or it's mis-typed and should be a task. Resolve so `Type=Feature` stays a trustworthy signal.
-7. **NOW pipeline is thin (2 items).** Only two items in active build against five groomed NEXT items. If either NOW item stalls, near-term shipping velocity drops to near zero.
+7. **NOW pipeline is down to a single item — and it's not product capability.** Only [#3](https://github.com/TA-39/website/issues/3) (Onboarding & Training) is in active build on the board, against five groomed NEXT items. Zero product-capability features are in flight per the board. If #3 stalls, board-visible shipping velocity is zero. (Real graditron work continues off-board — Risk 2 — but that doesn't help the roadmap-visible pipeline leadership reviews.)
 
 ---
 
@@ -271,13 +274,17 @@ Two of the three silent items are Arabic/Multilingual — the exact theme we're 
 
 Portfolio question for leadership: three of the four parity items sit in backlog. Under-investing in parity loses enterprise RFPs (plagiarism detection is table stakes in procurement); over-investing burns capacity we need for differentiation (agentic, teacher-in-the-loop, Arabic). Decide the parity budget explicitly rather than letting it default to "backlog forever."
 
+**(g) The roadmap has an Arabic-shaped blind spot.** The most strategic capability the company is building — the Arabic NLP engine — is *effectively delivered* (graditron [#96](https://github.com/TA-39/graditron/issues/96), closed 2026-07-09, under open epic [#123](https://github.com/TA-39/graditron/issues/123)), yet it's invisible on board #4 because the work lives in non-`Type=Feature` graditron issues. When #596 closed this week, the Arabic theme's NOW column went to zero even though Arabic engineering did not stop. This is a governance problem, not a delivery problem: leadership reviewing this board would conclude Arabic investment paused, which is the opposite of what happened. Fix by elevating a roadmap-level `Type=Feature` epic that represents the graditron Arabic program, so the board reflects reality. Until then, read the Arabic theme's board numbers with this footnote attached.
+
 ---
 
 ## Changes vs. the board today
 
 Concrete actions to reconcile the board with reality:
 
-1. **Re-type or confirm #113** — resolve the `duhajar` author-rule violation (elevate deliberately or convert to a task).
+1. **Elevate a `Type=Feature` epic for the graditron Arabic NLP program** (represents #96/#123) so board #4 stops hiding the company's most strategic capability (Risk 2, Call-out g).
+2. **Resolve the #99 vs. #596 Arabic-OCR contradiction** — either re-status/close [#99](https://github.com/TA-39/graditron/issues/99) to match "Arabic OCR intentionally unsupported," or file the new OCR program the closing note says is required. Don't leave it "Ready for Development" in limbo.
+3. **Re-type or confirm #113** — resolve the `duhajar` author-rule violation (elevate deliberately or convert to a task).
 2. **Populate Iteration on all NOW + NEXT items** (7 items) so the board can express timing, not just bucket.
 3. **Set a Size on unsized items** — #384, #385 (released, retroactive), and backlog items #328, #374, #473, #226, #474 all lack Size, blocking any capacity planning.
 4. **Re-prioritize #226** (Google Classroom) up from Low, or soften the features-page claim — pick one.
@@ -285,7 +292,7 @@ Concrete actions to reconcile the board with reality:
 6. **Audit "Handwritten Work Support" claim** against #99's unstarted status with marketing (Risk 1).
 7. **File issues (or explicitly drop)** the three orphaned announcement posts: Folders, Rubric Converter, Trusted Apps Pledge.
 8. **Draft retroactive announcements** for #166 and #532 (Call-out e / Section 11).
-9. **Assign a cross-repo epic owner** for the Arabic theme spanning #596/#166/#99 (Risk 3).
+9. **Assign a cross-repo owner** for the Arabic program spanning graditron (#96/#123/#99), api (#166), and frontend (#532) (Risk 3).
 
 ---
 
@@ -316,7 +323,6 @@ One-sentence, plain-English explanation per feature (what users get).
 | 474 | Accept audio assignment submissions with transcription, language detection, and spoken-work feedback. |
 | 532 | A fully translatable frontend UI, the foundation for delivering TA39 in multiple languages. |
 | 547 | Evolve TA39 from a feedback generator into an agentic assistant that acts on the teacher's behalf. |
-| 596 | Arabic natural-language processing so feedback quality in Arabic matches the English experience. |
 | 649 | A conversational, agentic Copilot embedded directly in the core UI. |
 | 697 | Teacher-controlled draft rounds that make student revision across drafts visible and reviewable. |
 | 701 | Microsoft Teams integration so Teams-based classes can use TA39 in their LMS. |
